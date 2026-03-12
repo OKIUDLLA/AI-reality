@@ -1,0 +1,130 @@
+{
+  "updated": "2026-03-12T12:30:00.000Z",
+  "hypoindex": 4.89,
+  "hypoindex_note": "Swiss Life Hypoindex březen 2026 — průměrná sazba nových hypoték",
+  "avg_market_rate": 4.53,
+  "avg_market_note": "Průměrná úroková sazba ČNB — leden 2026",
+  "pribor": {
+    "note": "PRIBOR data publikována se 48h zpožděním dle podmínek CFBF"
+  },
+  "best_rate": 3.99,
+  "avg_rate": 4.42,
+  "default_rate": 4.4,
+  "banks": [
+    {
+      "name": "MONETA Money Bank",
+      "rate": 3.99,
+      "fixation": "3, 5, 7 let",
+      "ltv": 80,
+      "note": "Nejnižší sazba na trhu, mimořádné splátky 25 % ročně zdarma",
+      "logo": "moneta"
+    },
+    {
+      "name": "Fio banka",
+      "rate": 4.08,
+      "fixation": "3, 5, 10 let",
+      "ltv": 85,
+      "note": "Bezplatný běžný účet k hypotéce, transparentní podmínky",
+      "logo": "fio"
+    },
+    {
+      "name": "UniCredit Bank",
+      "rate": 4.19,
+      "fixation": "5, 7, 10 let",
+      "ltv": 85,
+      "note": "Evropská síť, osobní poradenství, kombinace s dalšími produkty",
+      "logo": "unicredit"
+    },
+    {
+      "name": "Raiffeisenbank",
+      "rate": 4.19,
+      "fixation": "3, 5, 10 let",
+      "ltv": 90,
+      "note": "Individuální přístup, předčasné splacení bez poplatků, bonus za účet",
+      "logo": "raiffeisen"
+    },
+    {
+      "name": "Air Bank",
+      "rate": 4.29,
+      "fixation": "5, 7, 10 let",
+      "ltv": 80,
+      "note": "Online sjednání, 25 % ročně bez poplatků",
+      "logo": "airbank"
+    },
+    {
+      "name": "Česká spořitelna",
+      "rate": 4.59,
+      "fixation": "5, 7, 10 let",
+      "ltv": 90,
+      "note": "Největší banka v ČR, zvýhodněné hypotéky pro mladé do 36 let",
+      "logo": "csporitelna"
+    },
+    {
+      "name": "Komerční banka",
+      "rate": 4.59,
+      "fixation": "3, 5, 10 let",
+      "ltv": 85,
+      "note": "Silná pobočková síť + online sjednání",
+      "logo": "kb"
+    },
+    {
+      "name": "ČSOB",
+      "rate": 4.59,
+      "fixation": "5, 7, 10 let",
+      "ltv": 80,
+      "note": "Stabilní podmínky, mimořádné splátky za zákonných podmínek",
+      "logo": "csob"
+    },
+    {
+      "name": "mBank",
+      "rate": 4.79,
+      "fixation": "1, 3, 5 let",
+      "ltv": 90,
+      "note": "100% online, LTV až 90 %, intuitivní mobilní aplikace",
+      "logo": "mbank"
+    },
+    {
+      "name": "Partners Banka",
+      "rate": 4.89,
+      "fixation": "1, 3, 5 let",
+      "ltv": 80,
+      "note": "Poradenství na míru, individuální posouzení",
+      "logo": "partners"
+    }
+  ],
+  "history": [
+    {"month": "Leden 2026", "rate": 4.53},
+    {"month": "Prosinec 2025", "rate": 4.55},
+    {"month": "Listopad 2025", "rate": 4.53},
+    {"month": "Říjen 2025", "rate": 4.55},
+    {"month": "Září 2025", "rate": 4.59},
+    {"month": "Srpen 2025", "rate": 4.59},
+    {"month": "Červenec 2025", "rate": 4.59},
+    {"month": "Červen 2025", "rate": 4.56},
+    {"month": "Květen 2025", "rate": 4.60},
+    {"month": "Duben 2025", "rate": 4.65},
+    {"month": "Březen 2025", "rate": 4.68},
+    {"month": "Únor 2025", "rate": 4.72}
+  ],
+  "recommendations": [
+    {
+      "scenario": "Nejnižší splátka",
+      "bank": "MONETA Money Bank",
+      "rate": 3.99,
+      "note": "Nejnižší sazba na trhu od 3,99 %"
+    },
+    {
+      "scenario": "Jistota (5+ let fixace)",
+      "bank": "UniCredit Bank",
+      "rate": 4.19,
+      "note": "Stabilní splátka, fixace 5–10 let"
+    },
+    {
+      "scenario": "Maximální LTV (90 %)",
+      "bank": "Raiffeisenbank",
+      "rate": 4.19,
+      "note": "Pro klienty s menšími úsporami"
+    }
+  ],
+  "source": "top.cz, hypoindex.cz, cnb.cz — březen 2026"
+}

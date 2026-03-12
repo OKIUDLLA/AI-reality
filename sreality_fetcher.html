@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>BydlímTu — Sreality Data Fetcher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;padding:40px;color:#1e293b}
+.container{max-width:800px;margin:0 auto}
+h1{font-size:1.5rem;margin-bottom:8px}
+.sub{color:#64748b;margin-bottom:24px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.status{padding:12px 16px;border-radius:8px;margin:8px 0;font-size:.9rem}
+.status.info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.status.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.status.err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.status.warn{background:#fefce8;color:#854d0e;border:1px solid #fef08a}
+.progress{height:6px;background:#e2e8f0;border-radius:3px;margin:12px 0;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#1d4ed8);border-radius:3px;transition:width .3s}
+button{background:#1d4ed8;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s}
+button:hover{background:#1e40af;transform:translateY(-1px)}
+button:disabled{background:#94a3b8;cursor:not-allowed;transform:none}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.stat{text-align:center;padding:12px;background:#f8fafc;border-radius:8px}
+.stat .num{font-size:1.5rem;font-weight:700;color:#1d4ed8}
+.stat .label{font-size:.75rem;color:#64748b}
+#log{max-height:300px;overflow-y:auto;font-family:monospace;font-size:.8rem;background:#0f172a;color:#94a3b8;padding:16px;border-radius:8px;margin:12px 0}
+#log .ok{color:#4ade80}
+#log .err{color:#f87171}
+#log .info{color:#60a5fa}
+.download-area{display:none;text-align:center;padding:20px}
+.download-area.show{display:block}
+.download-btn{background:#16a34a;font-size:1.1rem;padding:14px 32px}
+.download-btn:hover{background:#15803d}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>BydlímTu Reality — Sreality Data Fetcher</h1>
+<p class="sub">Stáhne reálné nemovitosti ze Sreality.cz API a uloží je jako JSON pro web.</p>
+
+<div class="card">
+<h3>1. Stáhnout nemovitosti</h3>
+<p style="font-size:.85rem;color:#64748b;margin:8px 0">Stáhne byty, domy, komerční prostory a pozemky z celé ČR.</p>
+<div class="stats">
+<div class="stat"><div class="num" id="totalCount">—</div><div class="label">Celkem</div></div>
+<div class="stat"><div class="num" id="flatCount">—</div><div class="label">Byty</div></div>
+<div class="stat"><div class="num" id="houseCount">—</div><div class="label">Domy</div></div>
+<div class="stat"><div class="num" id="otherCount">—</div><div class="label">Ostatní</div></div>
+</div>
+<div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+<div id="statusArea"></div>
+<button id="fetchBtn" onclick="startFetch()">Stáhnout data ze Sreality.cz</button>
+</div>
+
+<div class="card">
+<h3>2. Log</h3>
+<div id="log"></div>
+</div>
+
+<div class="card download-area" id="downloadArea">
+<h3 style="margin-bottom:12px">3. Hotovo!</h3>
+<p style="margin-bottom:16px">Data úspěšně stažena. Stáhněte soubor a umístěte ho do složky <code>data/</code> vašeho projektu.</p>
+<button class="download-btn" onclick="downloadJSON()">⬇ Stáhnout properties.json</button>
+<p style="font-size:.75rem;color:#64748b;margin-top:12px">Soubor uložte jako: <code>data/properties.json</code></p>
+</div>
+</div>
+
+<script>
+const API = 'https://www.sreality.cz/api/cs/v2/estates';
+const QUERIES = [
+  { params: 'category_main_cb=1&category_type_cb=1&per_page=20&page=1', cat: 'byt', tx: 'prodej', label: 'Byty — prodej' },
+  { params: 'category_main_cb=1&category_type_cb=1&per_page=20&page=2', cat: 'byt', tx: 'prodej', label: 'Byty — prodej (strana 2)' },
+  { params: 'category_main_cb=1&category_type_cb=2&per_page=20&page=1', cat: 'byt', tx: 'pronájem', label: 'Byty — pronájem' },
+  { params: 'category_main_cb=2&category_type_cb=1&per_page=15&page=1', cat: 'dům', tx: 'prodej', label: 'Domy — prodej' },
+  { params: 'category_main_cb=2&category_type_cb=2&per_page=5&page=1', cat: 'dům', tx: 'pronájem', label: 'Domy — pronájem' },
+  { params: 'category_main_cb=4&category_type_cb=2&per_page=10&page=1', cat: 'komerční', tx: 'pronájem', label: 'Komerční — pronájem' },
+  { params: 'category_main_cb=4&category_type_cb=1&per_page=5&page=1', cat: 'komerční', tx: 'prodej', label: 'Komerční — prodej' },
+  { params: 'category_main_cb=3&category_type_cb=1&per_page=10&page=1', cat: 'pozemek', tx: 'prodej', label: 'Pozemky — prodej' },
+];
+
+let allEstates = [];
+let allProperties = [];
+let detailsFetched = 0;
+
+function log(msg, cls = '') {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = `[${new Date().toLocaleTimeString('cs-CZ')}] ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(pct) {
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function addStatus(msg, type = 'info') {
+  const area = document.getElementById('statusArea');
+  const div = document.createElement('div');
+  div.className = 'status ' + type;
+  div.textContent = msg;
+  area.innerHTML = '';
+  area.appendChild(div);
+}
+
+function extractCity(locality) {
+  if (!locality) return 'Česko';
+  const l = locality.toLowerCase();
+  const cities = {
+    'praha': 'Praha', 'brno': 'Brno', 'ostrava': 'Ostrava', 'plzeň': 'Plzeň',
+    'olomouc': 'Olomouc', 'liberec': 'Liberec', 'hradec': 'Hradec Králové',
+    'budějovic': 'České Budějovice', 'pardubice': 'Pardubice', 'zlín': 'Zlín',
+    'kladno': 'Kladno', 'karlovy': 'Karlovy Vary', 'ústí': 'Ústí nad Labem',
+    'opava': 'Opava', 'jihlava': 'Jihlava', 'teplice': 'Teplice',
+    'most': 'Most', 'frýdek': 'Frýdek-Místek', 'chomutov': 'Chomutov',
+    'děčín': 'Děčín', 'prostějov': 'Prostějov', 'přerov': 'Přerov',
+    'jablonec': 'Jablonec n. N.', 'mladá boleslav': 'Mladá Boleslav',
+    'třebíč': 'Třebíč', 'znojmo': 'Znojmo', 'kolín': 'Kolín',
+    'příbram': 'Příbram', 'cheb': 'Cheb', 'písek': 'Písek',
+    'kroměříž': 'Kroměříž', 'trutnov': 'Trutnov',
+  };
+  for (const [key, val] of Object.entries(cities)) {
+    if (l.includes(key)) return val;
+  }
+  // Try okres
+  const m = l.match(/okres\s+([^,]+)/);
+  if (m) {
+    const okres = m[1].trim();
+    for (const [key, val] of Object.entries(cities)) {
+      if (okres.includes(key)) return val;
+    }
+    return okres.charAt(0).toUpperCase() + okres.slice(1);
+  }
+  const parts = locality.split(',');
+  return parts[parts.length > 1 ? parts.length - 1 : 0].trim() || 'Česko';
+}
+
+function extractRooms(name) { const m = name.match(/(\d)\+/); return m ? parseInt(m[1]) : 0; }
+function extractSize(name) { const m = name.match(/(\d+)\s*m[²2]/); return m ? parseInt(m[1]) : 0; }
+
+function processDetail(detail) {
+  const r = { size: 0, bath: 0, floor: null, floors: null, energy: null, built: null, recon: null, desc: '', amenities: [] };
+  if (!detail || !detail.items) return r;
+  for (const item of detail.items) {
+    const n = (item.name || '').toLowerCase();
+    const v = item.value;
+    if ((n.includes('celková') || n.includes('užitná')) && n.includes('plocha')) r.size = parseInt(String(v).replace(/\s/g, '')) || 0;
+    else if (n.includes('plocha') && !r.size) r.size = parseInt(String(v).replace(/\s/g, '')) || 0;
+    if (n.includes('podlaží') && !n.includes('celkem') && !n.includes('počet')) r.floor = parseInt(v) || null;
+    if ((n.includes('celkem') || n.includes('počet')) && n.includes('podlaží')) r.floors = parseInt(v) || null;
+    if (n.includes('energetická')) r.energy = v ? String(v).trim().toUpperCase().charAt(0) : null;
+    if (n.includes('rok') && (n.includes('kolaud') || n.includes('výstavb'))) r.built = parseInt(v) || null;
+    if (n.includes('rekonstrukce') && v) r.recon = parseInt(v) || null;
+    if (n.includes('koupeln')) r.bath = parseInt(v) || 1;
+    if (item.type === 'set' && Array.isArray(v)) v.forEach(x => { if (typeof x === 'object' && x.value) r.amenities.push(x.value); else if (typeof x === 'string') r.amenities.push(x); });
+  }
+  if (detail.text && detail.text.value) r.desc = detail.text.value.replace(/<[^>]*>/g, '').substring(0, 400);
+  else if (detail.meta_description) r.desc = detail.meta_description;
+  return r;
+}
+
+function toProperty(estate, detail) {
+  const d = processDetail(detail);
+  const imgs = (estate._links?.images || []).slice(0, 5).map(i => {
+    let h = i.href || '';
+    if (h.startsWith('//')) h = 'https:' + h;
+    return h.replace(/\?.*$/, '');
+  });
+  const size = d.size || extractSize(estate.name);
+  const rooms = extractRooms(estate.name);
+  const daysAgo = Math.floor(Math.random() * 21);
+  const badges = [];
+  if (estate.new) badges.push('new');
+  else if (daysAgo <= 2) badges.push('new');
+
+  let amenities = d.amenities.filter(a => a && a.length < 40).slice(0, 8);
+  if (!amenities.length && estate.labels) amenities = estate.labels.filter(l => l.length < 40).slice(0, 5);
+  if (!amenities.length) amenities = ['Kontaktujte nás'];
+
+  const catMap = { 'dům': 'dum', 'komerční': 'komercni', 'pozemek': 'pozemek', 'byt': 'byt' };
+
+  return {
+    id: 'SR-' + estate.hash_id,
+    type: estate._cat,
+    tx: estate._tx,
+    title: estate.name,
+    loc: extractCity(estate.locality),
+    addr: estate.locality || '',
+    price: estate.price || 1,
+    size, rooms,
+    bath: d.bath || (rooms > 0 ? 1 : 0),
+    floor: d.floor, floors: d.floors,
+    imgs: imgs.length ? imgs : ['https://images.unsplash.com/photo-1502672260266-1c1ef2d93688'],
+    badges, desc: (d.desc || estate.name).replace(/\r?\n/g, ' ').trim().substring(0, 400),
+    amenities, energy: d.energy,
+    avail: 'Ihned', built: d.built, recon: d.recon,
+    added: daysAgo,
+    source: 'sreality.cz',
+    sourceUrl: `https://www.sreality.cz/detail/${estate._tx}/${catMap[estate._cat] || estate._cat}/${estate.hash_id}`,
+  };
+}
+
+async function startFetch() {
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Stahuji...';
+  allEstates = [];
+  allProperties = [];
+
+  log('Zahajuji stahování dat ze Sreality.cz API...', 'info');
+
+  // Phase 1: Fetch listings
+  for (let i = 0; i < QUERIES.length; i++) {
+    const q = QUERIES[i];
+    setProgress(Math.round((i / QUERIES.length) * 50));
+    addStatus(`Stahuji: ${q.label}...`);
+    log(`>> ${q.label}...`);
+    try {
+      const resp = await fetch(`${API}?${q.params}`);
+      const data = await resp.json();
+      const estates = data._embedded?.estates || [];
+      estates.forEach(e => { e._cat = q.cat; e._tx = q.tx; });
+      allEstates.push(...estates);
+      log(`   Nalezeno: ${estates.length} (z ${data.result_size} celkem)`, 'ok');
+    } catch (err) {
+      log(`   CHYBA: ${err.message}`, 'err');
+    }
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // Deduplicate
+  const seen = new Set();
+  allEstates = allEstates.filter(e => {
+    if (seen.has(e.hash_id)) return false;
+    seen.add(e.hash_id);
+    return true;
+  });
+
+  log(`\nCelkem staženo: ${allEstates.length} unikátních nemovitostí`, 'info');
+
+  // Phase 2: Fetch details for first 30
+  const detailCount = Math.min(30, allEstates.length);
+  log(`\nStahuji detaily pro ${detailCount} nemovitostí...`, 'info');
+
+  for (let i = 0; i < allEstates.length; i++) {
+    const e = allEstates[i];
+    let detail = null;
+
+    if (i < detailCount) {
+      setProgress(50 + Math.round((i / detailCount) * 40));
+      addStatus(`Detail ${i + 1}/${detailCount}: ${e.name.substring(0, 50)}...`);
+      try {
+        const resp = await fetch(`${API}/${e.hash_id}`);
+        detail = await resp.json();
+        detailsFetched++;
+      } catch (err) {
+        // Skip detail, use basic info
+      }
+      await new Promise(r => setTimeout(r, 350));
+    }
+
+    allProperties.push(toProperty(e, detail));
+  }
+
+  // Update counters
+  const flats = allProperties.filter(p => p.type === 'byt').length;
+  const houses = allProperties.filter(p => p.type === 'dům').length;
+  const other = allProperties.length - flats - houses;
+  document.getElementById('totalCount').textContent = allProperties.length;
+  document.getElementById('flatCount').textContent = flats;
+  document.getElementById('houseCount').textContent = houses;
+  document.getElementById('otherCount').textContent = other;
+
+  setProgress(100);
+  addStatus(`Hotovo! ${allProperties.length} nemovitostí připraveno ke stažení.`, 'ok');
+  log(`\nHotovo! ${allProperties.length} nemovitostí, ${detailsFetched} s detaily.`, 'ok');
+
+  // Show download
+  document.getElementById('downloadArea').classList.add('show');
+  btn.textContent = 'Hotovo ✓';
+}
+
+function downloadJSON() {
+  const output = {
+    updated: new Date().toISOString(),
+    source: 'sreality.cz',
+    count: allProperties.length,
+    properties: allProperties,
+  };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'properties.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  log('Soubor properties.json stažen!', 'ok');
+}
+</script>
+</body>
+</html>

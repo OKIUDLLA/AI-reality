@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+node_modules/
+.netlify/
+.env
+*.log
+.DS_Store
+data_receiver.py
+tmobile-prospecting.html

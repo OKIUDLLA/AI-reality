@@ -1,0 +1,44 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Scheduled function - refresh data every hour
+[functions."scheduled-refresh"]
+  schedule = "@hourly"
+
+# Redirect /api/* to Netlify Functions
+[[redirects]]
+  from = "/api/properties"
+  to = "/.netlify/functions/fetch-properties"
+  status = 200
+
+[[redirects]]
+  from = "/api/rates"
+  to = "/.netlify/functions/fetch-rates"
+  status = 200
+
+[[redirects]]
+  from = "/api/refresh"
+  to = "/.netlify/functions/scheduled-refresh"
+  status = 200
+
+# Cache control for data files
+[[headers]]
+  for = "/data/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "public, max-age=1800, stale-while-revalidate=3600"
+    Access-Control-Allow-Origin = "*"

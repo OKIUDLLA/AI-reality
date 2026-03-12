@@ -1,0 +1,13 @@
+{
+  "name": "bydlimtu-reality",
+  "version": "1.0.0",
+  "description": "BydlímTu Reality — AI chatbot napojený na Sreality.cz",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -p 8080",
+    "build": "echo 'Static site — no build needed'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

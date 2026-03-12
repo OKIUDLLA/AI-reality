@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="BydlímTu Reality — AI asistent pro nemovitosti v ČR. Byty, domy, komerční prostory 24/7.">
+<meta property="og:title" content="BydlímTu Reality — AI asistent pro nemovitosti">
+<meta property="og:description" content="Najděte vysněný domov s AI asistentem. 1247+ nemovitostí v celé ČR.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='0' y='28' font-size='32'>🏠</text></svg>">
+<title>BydlímTu Reality — Váš AI asistent pro nemovitosti</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--primary:#1a56db;--primary-dark:#1244b0;--primary-light:#e8effc;--accent:#f59e0b;--success:#10b981;--danger:#ef4444;--text:#1f2937;--text-light:#6b7280;--text-lighter:#9ca3af;--bg:#f9fafb;--white:#fff;--border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);--shadow-xl:0 20px 25px -5px rgba(0,0,0,.1);--radius:12px;--radius-sm:8px}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;color:var(--text);background:var(--bg);line-height:1.6;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;border:none;font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:1rem}
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
+.skip-link{position:absolute;top:-40px;left:0;background:var(--primary);color:#fff;padding:8px 16px;z-index:9999;transition:top .3s}.skip-link:focus{top:0}
+
+/* NAV */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);transition:all .3s}
+.navbar.scrolled{box-shadow:var(--shadow-lg)}
+.navbar .container{display:flex;align-items:center;justify-content:space-between;height:70px}
+.logo{display:flex;align-items:center;gap:10px;font-size:1.4rem;font-weight:700;color:var(--primary)}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none}
+.nav-links a{font-weight:500;color:var(--text-light);transition:all .2s;position:relative}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff!important;padding:10px 22px;border-radius:var(--radius-sm);font-weight:600;transition:all .2s}
+.nav-cta:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.fav-nav{position:relative}.fav-count{position:absolute;top:-8px;right:-10px;background:var(--danger);color:#fff;font-size:.6rem;font-weight:700;min-width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center}
+.fav-count.show{display:flex}
+.mobile-toggle{display:none;background:none;font-size:1.5rem;color:var(--text)}
+
+/* HERO */
+.hero{margin-top:70px;background:linear-gradient(135deg,#1a56db 0%,#3b82f6 50%,#60a5fa 100%);color:#fff;padding:80px 0 100px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%);border-radius:50%}
+.hero .container{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:1}
+.hero h1{font-size:3rem;font-weight:800;line-height:1.15;margin-bottom:20px}
+.hero h1 span{color:var(--accent)}
+.hero>p,.hero-text>p{font-size:1.15rem;opacity:.9;margin-bottom:30px;line-height:1.7}
+.hero-stats{display:flex;gap:36px;margin-top:40px}
+.hero-stat{text-align:center}.hero-stat .num{font-size:2.2rem;font-weight:800}.hero-stat .label{font-size:.85rem;opacity:.8}
+.hero-search-box{background:var(--white);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-xl);color:var(--text)}
+.hero-search-box h3{font-size:1.15rem;margin-bottom:18px;color:var(--text);display:flex;align-items:center;gap:8px}
+.search-form{display:flex;flex-direction:column;gap:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-group{display:flex;flex-direction:column;gap:3px}
+.form-group label{font-size:.75rem;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{padding:11px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);transition:all .2s}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.search-btn{background:var(--primary);color:#fff;padding:13px;border-radius:var(--radius-sm);font-size:1rem;font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:4px}
+.search-btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+
+/* LIVE VIEWER COUNT */
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);padding:6px 14px;border-radius:20px;font-size:.8rem;margin-bottom:16px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#10b981;animation:livePulse 2s infinite}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* DATA FRESHNESS */
+.data-freshness{display:flex;align-items:center;gap:8px;padding:10px 16px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:var(--radius-sm);margin-bottom:16px;font-size:.8rem;color:#166534}
+.data-freshness.stale{background:linear-gradient(135deg,#fefce8,#fef9c3);border-color:#fde68a;color:#92400e}
+.data-freshness.error{background:linear-gradient(135deg,#fef2f2,#fee2e2);border-color:#fecaca;color:#991b1b}
+.data-freshness .refresh-btn{margin-left:auto;background:none;color:inherit;font-size:.75rem;font-weight:600;text-decoration:underline;padding:2px 6px;border-radius:4px;transition:all .2s}
+.data-freshness .refresh-btn:hover{background:rgba(0,0,0,.05)}
+.source-link{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;color:var(--primary);font-weight:500;margin-top:4px;opacity:.7;transition:opacity .2s}
+.source-link:hover{opacity:1;text-decoration:underline}
+
+/* PROPERTIES */
+.properties-section{padding:80px 0}
+.properties-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;flex-wrap:wrap;gap:16px}
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.filter-tab{padding:8px 18px;border-radius:30px;font-size:.85rem;font-weight:500;background:var(--white);border:1px solid var(--border);color:var(--text-light);transition:all .2s}
+.filter-tab:hover,.filter-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.sort-select{padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-size:.85rem}
+.properties-count{font-size:.85rem;color:var(--text-light);margin-bottom:14px}
+.properties-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
+.property-card{background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:all .3s;cursor:pointer;border:1px solid var(--border);opacity:0;animation:cardIn .4s ease forwards}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+.property-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-xl)}
+.property-img{height:220px;background-size:cover;background-position:center;position:relative}
+.property-img .badges{position:absolute;top:12px;left:12px;display:flex;gap:6px}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-new{background:var(--success);color:#fff}.badge-hot{background:var(--danger);color:#fff}.badge-price{background:var(--accent);color:#fff}
+.property-img .fav-btn{position:absolute;top:12px;right:12px;width:34px;height:34px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;color:var(--text-light);font-size:.9rem}
+.property-img .fav-btn:hover,.property-img .fav-btn.active{color:var(--danger);background:#fff}
+.property-img .img-count{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;padding:3px 10px;border-radius:16px;font-size:.75rem}
+.property-img .viewers{position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,.6);color:#fff;padding:3px 10px;border-radius:16px;font-size:.7rem;display:flex;align-items:center;gap:5px}
+.property-img .viewers .vdot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:livePulse 2s infinite}
+.property-body{padding:18px}
+.property-type{font-size:.75rem;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.property-title{font-size:1.1rem;font-weight:700;margin-bottom:5px;line-height:1.3}
+.property-location{font-size:.85rem;color:var(--text-light);margin-bottom:10px;display:flex;align-items:center;gap:4px}
+.property-features{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.property-feat{display:flex;align-items:center;gap:5px;font-size:.8rem;color:var(--text-light)}
+.property-feat i{color:var(--primary);font-size:.85rem}
+.property-footer{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border)}
+.property-price{font-size:1.2rem;font-weight:800;color:var(--primary)}
+.price-m2{font-size:.7rem;font-weight:400;color:var(--text-lighter);display:block}
+.property-detail-btn{padding:7px 16px;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-sm);font-weight:600;font-size:.8rem;transition:all .2s}
+.property-detail-btn:hover{background:var(--primary);color:#fff}
+.property-time{font-size:.7rem;color:var(--text-lighter);margin-top:4px}
+.load-more-wrap{text-align:center;margin-top:36px}
+.load-more{padding:12px 36px;background:var(--white);border:2px solid var(--primary);color:var(--primary);border-radius:var(--radius-sm);font-weight:600;transition:all .2s}
+.load-more:hover{background:var(--primary);color:#fff}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-light)}
+.empty-state i{font-size:3rem;color:var(--border);margin-bottom:16px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;backdrop-filter:blur(4px);justify-content:center;align-items:flex-start;padding:40px 20px;overflow-y:auto}
+.modal-overlay.active{display:flex}
+.modal-content{background:var(--white);border-radius:var(--radius);max-width:900px;width:100%;animation:modalIn .3s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.modal-gallery{height:400px;background-size:cover;background-position:center;border-radius:var(--radius) var(--radius) 0 0;position:relative}
+.modal-close{position:absolute;top:14px;right:14px;width:38px;height:38px;background:rgba(255,255,255,.9);border-radius:50%;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.modal-close:hover{background:#fff;transform:scale(1.05)}
+.gallery-nav{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.gallery-nav:hover{background:#fff}
+.gallery-prev{left:14px}.gallery-next{right:14px}
+.gallery-counter{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;padding:4px 14px;border-radius:16px;font-size:.8rem}
+.modal-body{padding:28px}
+.modal-title{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.modal-location{color:var(--text-light);margin-bottom:18px;display:flex;align-items:center;gap:6px}
+.modal-price-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.modal-price{font-size:1.8rem;font-weight:800;color:var(--primary)}
+.modal-price .m2{font-size:.85rem;font-weight:400;color:var(--text-lighter)}
+.modal-id{font-size:.8rem;color:var(--text-lighter)}
+.modal-features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;background:var(--bg);padding:18px;border-radius:var(--radius-sm);margin-bottom:22px}
+.modal-feat{text-align:center}.modal-feat i{font-size:1.3rem;color:var(--primary);margin-bottom:4px}.modal-feat .val{font-size:1rem;font-weight:700}.modal-feat .lab{font-size:.7rem;color:var(--text-light)}
+.modal-desc h4{font-size:1rem;font-weight:600;margin-bottom:8px}.modal-desc p{color:var(--text-light);line-height:1.7;margin-bottom:14px}
+.modal-amenities{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+.amenity-tag{padding:5px 12px;background:var(--primary-light);color:var(--primary);border-radius:16px;font-size:.8rem;font-weight:500}
+.modal-actions{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.modal-actions button{padding:8px 16px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:500;transition:all .2s;display:flex;align-items:center;gap:6px}
+.modal-cta{display:flex;gap:10px}
+.modal-cta button{flex:1;padding:13px;border-radius:var(--radius-sm);font-weight:600;font-size:.95rem;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:var(--white);border:2px solid var(--primary);color:var(--primary)}.btn-outline:hover{background:var(--primary-light)}
+.btn-ghost{background:var(--bg);color:var(--text-light);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+
+/* FEATURES */
+.features-section{padding:80px 0;background:var(--white)}
+.features-section .container{text-align:center}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:36px}
+.feature-card{padding:36px 24px;border-radius:var(--radius);background:var(--bg);transition:all .3s;border:1px solid transparent}
+.feature-card:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.feature-icon{width:56px;height:56px;background:var(--primary-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:var(--primary)}
+.feature-card h3{font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.feature-card p{color:var(--text-light);font-size:.9rem;line-height:1.6}
+
+/* CALCULATOR */
+.calc-section{padding:80px 0;background:linear-gradient(135deg,#1e3a5f 0%,#1a56db 100%);color:#fff}
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}
+.calc-info h2{font-size:2rem;font-weight:700;margin-bottom:14px}
+.calc-info p{opacity:.85;line-height:1.7;margin-bottom:24px}
+.calc-banks{display:flex;gap:12px;flex-wrap:wrap}
+.calc-bank{background:rgba(255,255,255,.15);padding:8px 16px;border-radius:20px;font-size:.8rem;font-weight:500}
+.calc-card{background:var(--white);border-radius:var(--radius);padding:28px;color:var(--text)}
+.calc-card h3{font-size:1.1rem;font-weight:600;margin-bottom:18px;color:var(--text)}
+.calc-form{display:flex;flex-direction:column;gap:14px}
+.calc-form .form-group input,.calc-form .form-group select{width:100%}
+.calc-result{display:none;background:var(--primary-light);border-radius:var(--radius-sm);padding:18px;text-align:center;margin-top:10px}
+.calc-result.show{display:block}
+.calc-result .monthly{font-size:2rem;font-weight:800;color:var(--primary)}
+.calc-result .detail{font-size:.8rem;color:var(--text-light);margin-top:4px}
+.calc-btn{background:var(--primary);color:#fff;padding:13px;border-radius:var(--radius-sm);font-size:1rem;font-weight:600;width:100%;transition:all .2s}
+.calc-btn:hover{background:var(--primary-dark)}
+
+/* STATS */
+.stats-banner{background:linear-gradient(135deg,#1a56db,#3b82f6);color:#fff;padding:50px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-num{font-size:2.4rem;font-weight:800}.stat-label{font-size:.9rem;opacity:.8;margin-top:2px}
+
+/* TESTIMONIALS */
+.testimonials-section{padding:80px 0}
+.testimonials-section .container{text-align:center}
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px}
+.testimonial-card{background:var(--white);padding:26px;border-radius:var(--radius);box-shadow:var(--shadow);text-align:left;border:1px solid var(--border);transition:all .3s}
+.testimonial-card:hover{box-shadow:var(--shadow-lg)}
+.testimonial-stars{color:var(--accent);margin-bottom:12px;font-size:.9rem}
+.testimonial-text{color:var(--text-light);line-height:1.7;margin-bottom:18px;font-style:italic;font-size:.9rem}
+.testimonial-author{display:flex;align-items:center;gap:10px}
+.testimonial-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary);font-size:1rem}
+.testimonial-name{font-weight:600;font-size:.9rem}.testimonial-role{font-size:.8rem;color:var(--text-light)}
+
+/* CONTACT */
+.contact-section{padding:80px 0;background:var(--white)}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:start}
+.contact-info h2{font-size:1.8rem;font-weight:700;margin-bottom:14px}
+.contact-info>p{color:var(--text-light);line-height:1.7;margin-bottom:28px}
+.contact-item{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
+.contact-icon{width:44px;height:44px;min-width:44px;background:var(--primary-light);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:1rem}
+.contact-item h4{font-weight:600;margin-bottom:1px;font-size:.95rem}
+.contact-item p{color:var(--text-light);font-size:.9rem}
+.contact-form-card{background:var(--bg);padding:28px;border-radius:var(--radius);border:1px solid var(--border)}
+.contact-form-card h3{font-size:1.1rem;font-weight:600;margin-bottom:18px}
+.contact-form{display:flex;flex-direction:column;gap:12px}
+.contact-form input,.contact-form select,.contact-form textarea{padding:11px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--white);transition:all .2s}
+.contact-form input:focus,.contact-form select:focus,.contact-form textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.contact-form textarea{min-height:90px;resize:vertical}
+.contact-form .field-error{border-color:var(--danger)!important}
+.field-msg{font-size:.75rem;margin-top:-8px}
+.field-msg.error{color:var(--danger)}.field-msg.ok{color:var(--success)}
+.contact-submit{background:var(--primary);color:#fff;padding:13px;border-radius:var(--radius-sm);font-size:1rem;font-weight:600;transition:all .2s;position:relative}
+.contact-submit:hover{background:var(--primary-dark)}
+.contact-submit.loading{opacity:.7;pointer-events:none}
+.contact-submit.success{background:var(--success)}
+
+/* FOOTER */
+.footer{background:#111827;color:#d1d5db;padding:50px 0 24px}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:36px}
+.footer-brand .logo{color:#fff;margin-bottom:14px}.footer-brand p{font-size:.85rem;line-height:1.6;opacity:.7}
+.footer h4{color:#fff;font-size:.95rem;font-weight:600;margin-bottom:14px}
+.footer ul{list-style:none}.footer ul li{margin-bottom:8px}.footer ul a{color:#9ca3af;font-size:.85rem;transition:all .2s}.footer ul a:hover{color:#fff}
+.footer-bottom{margin-top:36px;padding-top:18px;border-top:1px solid #374151;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;opacity:.7;flex-wrap:wrap;gap:10px}
+
+/* CHATBOT */
+.chatbot-trigger{position:fixed;bottom:24px;right:24px;z-index:1500;width:60px;height:60px;border-radius:50%;background:var(--primary);color:#fff;font-size:1.4rem;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-xl);transition:all .3s;animation:chatPulse 2.5s infinite}
+.chatbot-trigger:hover{transform:scale(1.08)}
+.chatbot-trigger.open{animation:none;background:var(--primary-dark)}
+@keyframes chatPulse{0%,100%{box-shadow:0 0 0 0 rgba(26,86,219,.4)}50%{box-shadow:0 0 0 14px rgba(26,86,219,0)}}
+.chat-notif{position:absolute;top:-3px;right:-3px;width:18px;height:18px;background:var(--danger);border-radius:50%;border:2px solid #fff;font-size:.6rem;display:none;align-items:center;justify-content:center;font-weight:700;color:#fff}
+.chat-notif.show{display:flex}
+
+.chatbot-window{position:fixed;bottom:96px;right:24px;z-index:1500;width:380px;height:540px;max-height:calc(100vh - 130px);background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-xl);display:none;flex-direction:column;overflow:hidden;border:1px solid var(--border)}
+.chatbot-window.active{display:flex;animation:chatIn .3s ease}
+@keyframes chatIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.chat-header{background:var(--primary);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.chat-header-info{flex:1}.chat-header-info h4{font-size:.9rem;font-weight:600}.chat-header-info span{font-size:.75rem;opacity:.85;display:flex;align-items:center;gap:5px}
+.chat-header-info .online-dot{width:7px;height:7px;background:var(--success);border-radius:50%;display:inline-block}
+.chat-header button{background:none;color:#fff;font-size:1.1rem;opacity:.8}.chat-header button:hover{opacity:1}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:3px}.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.chat-msg{max-width:82%;padding:10px 14px;border-radius:14px;font-size:.85rem;line-height:1.5;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.bot{background:var(--bg);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:3px}
+.chat-msg.user{background:var(--primary);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.chat-msg .timestamp{font-size:.65rem;opacity:.6;margin-top:4px;display:block}
+.typing-indicator{display:flex;gap:4px;padding:4px 0;align-items:center}
+.typing-indicator span{width:7px;height:7px;border-radius:50%;background:var(--text-lighter);animation:typingDot 1.4s infinite}
+.typing-indicator span:nth-child(2){animation-delay:.2s}.typing-indicator span:nth-child(3){animation-delay:.4s}
+@keyframes typingDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.quick-replies{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.quick-reply{padding:5px 12px;background:var(--primary-light);color:var(--primary);border-radius:16px;font-size:.75rem;font-weight:500;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.quick-reply:hover{border-color:var(--primary);background:#fff}
+.chat-input-area{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.chat-input{flex:1;padding:9px 13px;border:1px solid var(--border);border-radius:20px;font-size:.85rem;background:var(--bg);transition:all .2s}
+.chat-input:focus{outline:none;border-color:var(--primary)}
+.chat-send{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.85rem}
+.chat-send:hover{background:var(--primary-dark)}
+
+/* LEAD FORM IN CHAT */
+.chat-lead-form{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.chat-lead-form input{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:.8rem;background:#fff}
+.chat-lead-form input:focus{outline:none;border-color:var(--primary)}
+.chat-lead-submit{padding:7px 14px;background:var(--primary);color:#fff;border-radius:6px;font-weight:600;font-size:.8rem;transition:all .2s;align-self:flex-start}
+
+/* BACK TO TOP */
+.back-to-top{position:fixed;bottom:24px;left:24px;width:44px;height:44px;background:var(--white);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);z-index:1000;opacity:0;pointer-events:none;transition:all .3s;color:var(--primary);font-size:1.1rem}
+.back-to-top.show{opacity:1;pointer-events:auto}
+.back-to-top:hover{background:var(--primary);color:#fff}
+
+/* TOAST */
+.toast-container{position:fixed;top:80px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--white);border-radius:var(--radius-sm);padding:12px 18px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;animation:toastIn .3s ease;border-left:4px solid var(--success);min-width:280px;font-size:.9rem}
+.toast.error{border-left-color:var(--danger)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.toast i{font-size:1.1rem}.toast.success i{color:var(--success)}.toast.error i{color:var(--danger)}
+
+/* COOKIE */
+.cookie-banner{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:16px 24px;z-index:1600;display:none;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 -4px 12px rgba(0,0,0,.08);font-size:.85rem}
+.cookie-banner.show{display:flex}
+.cookie-btns{display:flex;gap:8px}
+.cookie-btns button{padding:8px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:.8rem;transition:all .2s}
+
+/* NOTIFICATION POPUP */
+.live-notification{position:fixed;bottom:96px;left:24px;background:var(--white);border-radius:var(--radius-sm);padding:12px 18px;box-shadow:var(--shadow-xl);z-index:1400;display:none;align-items:center;gap:10px;font-size:.8rem;border:1px solid var(--border);animation:slideUp .4s ease;max-width:320px}
+.live-notification.show{display:flex}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.live-notification img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+
+/* FAVORITES DRAWER */
+.fav-drawer{position:fixed;top:0;right:-400px;width:380px;height:100vh;background:var(--white);z-index:2500;box-shadow:-4px 0 20px rgba(0,0,0,.1);transition:right .3s;display:flex;flex-direction:column}
+.fav-drawer.open{right:0}
+.fav-drawer-header{padding:20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.fav-drawer-header h3{font-size:1.1rem;font-weight:600}
+.fav-drawer-body{flex:1;overflow-y:auto;padding:16px}
+.fav-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2400;display:none}
+.fav-drawer-overlay.show{display:block}
+.fav-item{display:flex;gap:12px;padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:10px;cursor:pointer;transition:all .2s}
+.fav-item:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.fav-item-img{width:70px;height:55px;border-radius:6px;background-size:cover;background-position:center;flex-shrink:0}
+.fav-item-info{flex:1;min-width:0}
+.fav-item-title{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fav-item-price{font-size:.9rem;font-weight:700;color:var(--primary)}
+.fav-item-remove{color:var(--text-lighter);font-size:.85rem;align-self:center;padding:4px;transition:all .2s}
+.fav-item-remove:hover{color:var(--danger)}
+
+/* COMPARISON */
+.comparison-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;justify-content:center;align-items:flex-start;padding:40px 20px;overflow-y:auto;backdrop-filter:blur(4px)}
+.comparison-modal.active{display:flex}
+.comparison-content{background:var(--white);border-radius:var(--radius);max-width:800px;width:100%;padding:28px;animation:modalIn .3s ease}
+.comparison-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.comparison-table th,.comparison-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.comparison-table th{background:var(--bg);font-weight:600;position:sticky;top:0}
+.comparison-table td:first-child{font-weight:500;color:var(--text-light)}
+
+/* RESPONSIVE */
+@media(max-width:1024px){.features-grid{grid-template-columns:repeat(2,1fr)}.calc-grid{grid-template-columns:1fr}}
+@media(max-width:768px){
+.hero .container{grid-template-columns:1fr;gap:24px}.hero h1{font-size:2rem}.hero-stats{gap:16px;flex-wrap:wrap}
+.nav-links{display:none}.mobile-toggle{display:block}
+.properties-grid{grid-template-columns:1fr}.features-grid{grid-template-columns:1fr}
+.stats-grid{grid-template-columns:repeat(2,1fr)}.testimonials-grid{grid-template-columns:1fr}
+.contact-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}
+.chatbot-window{width:calc(100vw - 16px);right:8px;bottom:90px;height:70vh}
+.modal-features{grid-template-columns:repeat(2,1fr)}.modal-gallery{height:240px}
+.form-row{grid-template-columns:1fr}.fav-drawer{width:100%}
+.calc-grid{gap:24px}.live-notification{max-width:calc(100vw - 48px)}
+}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Přeskočit na obsah</a>
+
+<!-- NAV -->
+<nav class="navbar" id="navbar" role="navigation" aria-label="Hlavní navigace">
+<div class="container">
+<a href="#" class="logo" aria-label="BydlímTu Reality - domů"><i class="fas fa-home"></i> BydlímTu</a>
+<ul class="nav-links" id="navLinks">
+<li><a href="#properties">Nemovitosti</a></li>
+<li><a href="#calculator">Hypotéka</a></li>
+<li><a href="#features">Služby</a></li>
+<li><a href="#testimonials">Reference</a></li>
+<li><a href="#contact">Kontakt</a></li>
+<li><a href="#" class="fav-nav" onclick="toggleFavDrawer();return false" aria-label="Oblíbené"><i class="far fa-heart"></i><span class="fav-count" id="favCount">0</span></a></li>
+<li><a href="#" class="nav-cta" onclick="openChat();return false"><i class="fas fa-robot"></i> AI Asistent</a></li>
+</ul>
+<button class="mobile-toggle" onclick="toggleMobileNav()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div class="container">
+<div class="hero-text">
+<div class="live-badge"><span class="live-dot"></span> <span id="liveViewers">47</span> lidí právě hledá</div>
+<h1>Najděte svůj <span>vysněný domov</span> s&nbsp;AI&nbsp;asistentem</h1>
+<p>BydlímTu Reality využívá umělou inteligenci, která vám pomůže najít ideální nemovitost 24/7. Ušetřete čas a získejte personalizované doporučení.</p>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">1 247</div><div class="label">Nemovitostí</div></div>
+<div class="hero-stat"><div class="num">+25%</div><div class="label">Konverze</div></div>
+<div class="hero-stat"><div class="num">24/7</div><div class="label">AI podpora</div></div>
+<div class="hero-stat"><div class="num">98%</div><div class="label">Spokojenost</div></div>
+</div>
+</div>
+<div class="hero-search-box">
+<h3><i class="fas fa-search" style="color:var(--primary)"></i> Rychlé vyhledávání</h3>
+<form class="search-form" id="heroSearchForm">
+<div class="form-group"><label>Typ</label>
+<select id="heroType"><option value="">Všechny typy</option><option value="byt">Byt</option><option value="dům">Dům</option><option value="komerční">Komerční</option><option value="pozemek">Pozemek</option></select></div>
+<div class="form-group"><label>Lokalita</label>
+<select id="heroLoc"><option value="">Celá ČR</option><option value="Praha">Praha</option><option value="Brno">Brno</option><option value="Ostrava">Ostrava</option><option value="Plzeň">Plzeň</option><option value="Olomouc">Olomouc</option><option value="Liberec">Liberec</option></select></div>
+<div class="form-row">
+<div class="form-group"><label>Cena od</label><input type="text" id="heroPriceFrom" placeholder="0 Kč" oninput="formatPriceInput(this)"></div>
+<div class="form-group"><label>Cena do</label><input type="text" id="heroPriceTo" placeholder="Bez limitu" oninput="formatPriceInput(this)"></div>
+</div>
+<div class="form-group"><label>Transakce</label>
+<select id="heroTx"><option value="">Prodej i pronájem</option><option value="prodej">Prodej</option><option value="pronájem">Pronájem</option></select></div>
+<button type="submit" class="search-btn"><i class="fas fa-search"></i> Vyhledat nemovitosti</button>
+</form>
+</div>
+</div>
+</section>
+
+<!-- PROPERTIES -->
+<section class="properties-section" id="properties" role="main" id="main">
+<div class="container">
+<div id="dataFreshness" class="data-freshness" style="display:none">
+<span class="live-dot" style="width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
+<span id="dataFreshnessText">Načítám data...</span>
+<button class="refresh-btn" onclick="loadLiveData()" title="Obnovit data"><i class="fas fa-sync-alt"></i> Aktualizovat</button>
+</div>
+<div class="properties-header">
+<div><h2 class="section-title">Nabídka nemovitostí</h2><p class="section-subtitle" id="propertiesSubtitle">Prohlédněte si aktuální nabídku nebo využijte AI asistenta</p></div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<div class="filter-tabs" id="filterTabs">
+<button class="filter-tab active" data-filter="all">Vše</button>
+<button class="filter-tab" data-filter="byt">Byty</button>
+<button class="filter-tab" data-filter="dům">Domy</button>
+<button class="filter-tab" data-filter="komerční">Komerční</button>
+<button class="filter-tab" data-filter="pozemek">Pozemky</button>
+</div>
+<select class="sort-select" id="sortSelect"><option value="newest">Nejnovější</option><option value="price-asc">Cena ↑</option><option value="price-desc">Cena ↓</option><option value="size-desc">Plocha ↓</option></select>
+</div>
+</div>
+<div class="properties-count" id="propertiesCount"></div>
+<div class="properties-grid" id="propertiesGrid"></div>
+<div class="load-more-wrap" id="loadMoreWrap"><button class="load-more" onclick="loadMore()">Načíst další nemovitosti</button></div>
+</div>
+</section>
+
+<!-- CALCULATOR -->
+<section class="calc-section" id="calculator">
+<div class="container">
+<div class="calc-grid">
+<div class="calc-info">
+<h2>Hypoteční kalkulačka</h2>
+<p>Spočítejte si měsíční splátku vaší hypotéky online. Spolupracujeme s předními bankami v ČR a pomůžeme vám získat nejlepší podmínky.</p>
+<div class="calc-banks" id="calcBanks">
+<span class="calc-bank">Česká spořitelna</span><span class="calc-bank">ČSOB</span><span class="calc-bank">Komerční banka</span><span class="calc-bank">Moneta</span><span class="calc-bank">Raiffeisenbank</span>
+</div>
+<div id="ratesInfo" style="font-size:.72rem;color:var(--text-lighter);margin-top:6px;text-align:center"></div>
+</div>
+<div class="calc-card">
+<h3><i class="fas fa-calculator" style="color:var(--primary);margin-right:6px"></i> Kalkulačka splátky</h3>
+<div class="calc-form">
+<div class="form-group"><label>Výše úvěru (Kč)</label><input type="text" id="calcAmount" placeholder="3 000 000" oninput="formatPriceInput(this)"></div>
+<div class="form-group"><label>Úroková sazba (% p.a.)</label><input type="number" id="calcRate" value="4.5" step="0.1" min="0.1" max="15"></div>
+<div class="form-group"><label>Doba splácení (let)</label>
+<select id="calcYears"><option value="10">10 let</option><option value="15">15 let</option><option value="20" selected>20 let</option><option value="25">25 let</option><option value="30">30 let</option></select></div>
+<button type="button" class="calc-btn" onclick="calcMortgage()"><i class="fas fa-calculator"></i> Spočítat splátku</button>
+<div class="calc-result" id="calcResult">
+<div>Měsíční splátka</div>
+<div class="monthly" id="calcMonthly">—</div>
+<div class="detail" id="calcDetail"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+<div class="container">
+<h2 class="section-title">Proč BydlímTu Reality?</h2>
+<p class="section-subtitle">Kombinujeme moderní technologie s osobním přístupem</p>
+<div class="features-grid">
+<div class="feature-card"><div class="feature-icon"><i class="fas fa-robot"></i></div><h3>AI Asistent 24/7</h3><p>Náš chatbot odpovídá na dotazy kdykoliv — den i noc. Navrhne nemovitosti podle vašich požadavků a poradí s financováním.</p></div>
+<div class="feature-card"><div class="feature-icon"><i class="fas fa-chart-line"></i></div><h3>Analýza trhu</h3><p>Pravidelné reporty o vývoji cen. Zjistěte, jestli je správný čas na koupi nebo prodej nemovitosti ve vaší oblasti.</p></div>
+<div class="feature-card"><div class="feature-icon"><i class="fas fa-handshake"></i></div><h3>Osobní makléř</h3><p>Každý klient má dedikovaného makléře — od prohlídky po podpis smlouvy a předání klíčů.</p></div>
+<div class="feature-card"><div class="feature-icon"><i class="fas fa-vr-cardboard"></i></div><h3>Virtuální prohlídky</h3><p>Prohlédněte si nemovitost z domova díky 3D prohlídkám. Ušetřete čas a navštivte jen ty, co vás zaujmou.</p></div>
+<div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-alt"></i></div><h3>Právní servis</h3><p>Kontrola smluv, prověření nemovitosti, advokátní úschova a asistence s katastrem nemovitostí.</p></div>
+<div class="feature-card"><div class="feature-icon"><i class="fas fa-coins"></i></div><h3>Hypoteční poradenství</h3><p>Srovnáme nabídky 8 bank najednou a pomůžeme získat nejlepší podmínky hypotéky.</p></div>
+</div>
+</div>
+</section>
+
+<!-- STATS -->
+<section class="stats-banner"><div class="container"><div class="stats-grid">
+<div class="stat-item"><div class="stat-num" data-target="1247">0</div><div class="stat-label">Nemovitostí v nabídce</div></div>
+<div class="stat-item"><div class="stat-num" data-target="3850">0</div><div class="stat-label">Spokojených klientů</div></div>
+<div class="stat-item"><div class="stat-num" data-target="15">0</div><div class="stat-label">Let na trhu</div></div>
+<div class="stat-item"><div class="stat-num" data-target="42">0</div><div class="stat-label">Profesionálních makléřů</div></div>
+</div></div></section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" id="testimonials">
+<div class="container">
+<h2 class="section-title" style="text-align:center">Co říkají naši klienti</h2>
+<p class="section-subtitle" style="text-align:center">Přečtěte si zkušenosti lidí, kteří našli nový domov s námi</p>
+<div class="testimonials-grid">
+<div class="testimonial-card"><div class="testimonial-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div><p class="testimonial-text">„AI asistent mi pomohl najít byt v Praze za skvělou cenu. Odpovídal mi i v noci. Celý proces trval jen 3 týdny!"</p><div class="testimonial-author"><div class="testimonial-avatar">MK</div><div><div class="testimonial-name">Marie Kovářová</div><div class="testimonial-role">Koupě bytu, Praha 5</div></div></div></div>
+<div class="testimonial-card"><div class="testimonial-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div><p class="testimonial-text">„Prodal jsem dům za cenu vyšší, než jsem čekal. Makléř i AI byli profesionální. Hlavně rychlé odpovědi na dotazy kupujících."</p><div class="testimonial-author"><div class="testimonial-avatar">PN</div><div><div class="testimonial-name">Petr Novák</div><div class="testimonial-role">Prodej domu, Brno</div></div></div></div>
+<div class="testimonial-card"><div class="testimonial-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div><p class="testimonial-text">„Hledali jsme prostor pro kavárnu. AI asistent pochopil přesně co potřebujeme a navrhl 3 ideální prostory."</p><div class="testimonial-author"><div class="testimonial-avatar">JS</div><div><div class="testimonial-name">Jana Svobodová</div><div class="testimonial-role">Pronájem, Olomouc</div></div></div></div>
+</div>
+</div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+<div class="container"><div class="contact-grid">
+<div class="contact-info">
+<h2>Spojte se s námi</h2>
+<p>Máte dotaz nebo chcete prodávat/koupit nemovitost? Napište nám nebo využijte AI asistenta 24/7.</p>
+<div class="contact-item"><div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div><div><h4>Kancelář</h4><p>Václavské náměstí 42, Praha 1</p></div></div>
+<div class="contact-item"><div class="contact-icon"><i class="fas fa-phone"></i></div><div><h4>Telefon</h4><p>+420 800 123 456</p></div></div>
+<div class="contact-item"><div class="contact-icon"><i class="fas fa-envelope"></i></div><div><h4>E-mail</h4><p>info@bydlimtu.cz</p></div></div>
+<div class="contact-item"><div class="contact-icon"><i class="fas fa-clock"></i></div><div><h4>Otevírací doba</h4><p>Po–Pá 8:00–18:00 | AI 24/7</p></div></div>
+</div>
+<div class="contact-form-card">
+<h3>Nezávazná poptávka</h3>
+<form class="contact-form" id="contactForm">
+<input type="text" placeholder="Jméno a příjmení *" required id="cName" aria-label="Jméno">
+<input type="email" placeholder="E-mail *" required id="cEmail" aria-label="E-mail" oninput="validateEmail(this)">
+<div class="field-msg" id="emailMsg"></div>
+<input type="tel" placeholder="Telefon" id="cPhone" aria-label="Telefon" oninput="formatPhone(this)">
+<select id="cSubject" aria-label="Předmět"><option value="">Předmět poptávky</option><option value="koupě">Chci koupit</option><option value="prodej">Chci prodat</option><option value="pronájem">Hledám pronájem</option><option value="odhad">Odhad ceny</option><option value="jiné">Jiné</option></select>
+<textarea placeholder="Vaše zpráva..." id="cMsg" aria-label="Zpráva"></textarea>
+<button type="submit" class="contact-submit" id="contactBtn">Odeslat poptávku</button>
+</form>
+</div>
+</div></div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+<div class="container"><div class="footer-grid">
+<div class="footer-brand"><div class="logo"><i class="fas fa-home"></i> BydlímTu</div><p>Moderní realitní kancelář s AI asistentem. Pomáháme lidem najít vysněný domov od roku 2011. Člen ARK ČR.</p></div>
+<div><h4>Služby</h4><ul><li><a href="#">Prodej nemovitostí</a></li><li><a href="#">Pronájem</a></li><li><a href="#">Odhady cen</a></li><li><a href="#">Hypoteční poradenství</a></li><li><a href="#">Právní servis</a></li></ul></div>
+<div><h4>Lokality</h4><ul><li><a href="#">Praha</a></li><li><a href="#">Brno</a></li><li><a href="#">Ostrava</a></li><li><a href="#">Plzeň</a></li><li><a href="#">Olomouc</a></li></ul></div>
+<div><h4>Společnost</h4><ul><li><a href="#">O nás</a></li><li><a href="#">Kariéra</a></li><li><a href="#">Blog</a></li><li><a href="#">Podmínky užití</a></li><li><a href="#">GDPR</a></li></ul></div>
+</div>
+<div class="footer-bottom">
+<span>&copy; 2026 BydlímTu Reality s.r.o. | Demo — <a href="https://www.kudlimarketing.cz" target="_blank" rel="noopener" style="color:var(--primary)">KudliMarketing.cz</a></span>
+<div style="display:flex;gap:14px"><a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a><a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a><a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a></div>
+</div>
+</div>
+</footer>
+
+<!-- CHATBOT -->
+<button class="chatbot-trigger" id="chatTrigger" onclick="toggleChat()" aria-label="Otevřít AI chat">
+<i class="fas fa-comment-dots" id="chatIcon"></i>
+<span class="chat-notif" id="chatNotif">1</span>
+</button>
+<div class="chatbot-window" id="chatWindow">
+<div class="chat-header">
+<div class="chat-avatar"><i class="fas fa-robot"></i></div>
+<div class="chat-header-info"><h4>AI Asistent BydlímTu</h4><span><span class="online-dot"></span> Online — odpovídá okamžitě</span></div>
+<button onclick="toggleChat()" aria-label="Zavřít chat"><i class="fas fa-times"></i></button>
+</div>
+<div class="chat-messages" id="chatMessages"></div>
+<div class="chat-input-area">
+<input type="text" class="chat-input" id="chatInput" placeholder="Napište zprávu..." aria-label="Zpráva pro chatbot">
+<button class="chat-send" id="chatSendBtn" onclick="sendChat()" aria-label="Odeslat"><i class="fas fa-paper-plane"></i></button>
+</div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="propertyModal"></div>
+<div class="comparison-modal" id="comparisonModal"><div class="comparison-content" id="comparisonContent"></div></div>
+
+<!-- FAVORITES DRAWER -->
+<div class="fav-drawer-overlay" id="favOverlay" onclick="toggleFavDrawer()"></div>
+<div class="fav-drawer" id="favDrawer">
+<div class="fav-drawer-header"><h3><i class="fas fa-heart" style="color:var(--danger);margin-right:6px"></i> Oblíbené</h3><button onclick="toggleFavDrawer()" style="font-size:1.2rem;background:none;color:var(--text-light)"><i class="fas fa-times"></i></button></div>
+<div class="fav-drawer-body" id="favBody"><p style="text-align:center;color:var(--text-lighter);padding:40px 0">Zatím nemáte žádné oblíbené.</p></div>
+</div>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Zpět nahoru"><i class="fas fa-chevron-up"></i></button>
+
+<!-- COOKIE -->
+<div class="cookie-banner" id="cookieBanner">
+<span><i class="fas fa-cookie-bite" style="margin-right:6px;color:var(--accent)"></i> Tento web používá cookies pro zlepšení vašeho zážitku.</span>
+<div class="cookie-btns">
+<button onclick="document.getElementById('cookieBanner').classList.remove('show')" class="btn-ghost">Odmítnout</button>
+<button onclick="localStorage.setItem('ck','1');document.getElementById('cookieBanner').classList.remove('show')" class="btn-primary" style="font-size:.8rem;padding:8px 18px;border-radius:var(--radius-sm)">Přijmout</button>
+</div>
+</div>
+
+<!-- LIVE NOTIFICATION -->
+<div class="live-notification" id="liveNotif"></div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+<script>
+
+// ===== DATA LOADING =====
+let DB = [];
+let RATES_DATA = null;
+let DATA_LOADED = false;
+const DATA_SOURCE_LABEL = document.createElement("div");
+
+// Fallback DB (used when live data unavailable)
+const FALLBACK_DB = [
+  {id:"BT-001",type:"byt",tx:"prodej",title:"Luxusní byt 3+kk s terasou, Vinohrady",loc:"Praha",addr:"Praha 2 — Vinohrady",price:12500000,size:98,rooms:3,bath:1,floor:4,floors:6,
+   imgs:["https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800","https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800","https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800"],
+   badges:["new"],desc:"Exkluzivní byt 3+kk v samém srdci Vinohrad. Kompletní rekonstrukce 2024 — moderní dispozice s prostorným obývacím pokojem propojeným s kuchyňským koutem, dvěma ložnicemi a luxusní koupelnou. Terasa 15 m² s výhledem na park. Podzemní garáž, sklep.",
+   amenities:["Terasa","Garáž","Sklep","Výtah","Rekonstrukce 2024","Parkování","Klidná lokalita"],energy:"B",avail:"Ihned",built:1935,recon:2024,added:1},
+  {id:"BT-002",type:"dům",tx:"prodej",title:"Rodinný dům 5+1 se zahradou, Černošice",loc:"Praha",addr:"Černošice u Prahy",price:18900000,size:220,rooms:5,bath:2,floor:null,floors:2,
+   imgs:["https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800","https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800","https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800"],
+   badges:["hot"],desc:"Prostorný rodinný dům v klidné vilové čtvrti. 5 pokojů, 2 koupelny, kuchyň s jídelním koutem, garáž pro 2 auta, zahrada 850 m². Vlak do centra Prahy 25 min.",
+   amenities:["Zahrada 850 m²","Garáž 2 auta","Klidná lokalita","Vlak 5 min","Nízkoenergetický","Podlahové topení","Krb"],energy:"A",avail:"Od 1.5.2026",built:2018,recon:null,added:3},
+  {id:"BT-003",type:"byt",tx:"pronájem",title:"Moderní byt 2+kk, Karlín",loc:"Praha",addr:"Praha 8 — Karlín",price:28000,size:62,rooms:2,bath:1,floor:7,floors:10,
+   imgs:["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800","https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=800","https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=800"],
+   badges:[],desc:"Designový byt 2+kk v novostavbě v Karlíně. Kompletně zařízený designovým nábytkem, otevřená dispozice, ložnice, moderní koupelna, balkon. Metro Křižíkova 3 min.",
+   amenities:["Zařízený","Balkon","Metro 3 min","Novostavba","Sklep","Prádelna v domě","Recepce"],energy:"A",avail:"Ihned",built:2022,recon:null,added:0},
+  {id:"BT-004",type:"komerční",tx:"pronájem",title:"Obchodní prostor 120 m², centrum Brna",loc:"Brno",addr:"Brno — Centrum",price:45000,size:120,rooms:3,bath:1,floor:0,floors:4,
+   imgs:["https://images.unsplash.com/photo-1497366216548-37526070297c?w=800","https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800","https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800"],
+   badges:["price"],desc:"Reprezentativní obchodní prostor v přízemí historické budovy na Náměstí Svobody. Vhodný pro showroom, kavárnu, kancelář. Vysoké stropy, velká výloha, klimatizace.",
+   amenities:["Centrum města","Velká výloha","Klimatizace","Vysoké stropy","Bezbariérový","Parkování u domu"],energy:"C",avail:"Od 1.4.2026",built:1890,recon:2020,added:5},
+  {id:"BT-005",type:"dům",tx:"prodej",title:"Vila s bazénem, Šárecké údolí",loc:"Praha",addr:"Praha 6 — Šárecké údolí",price:42000000,size:380,rooms:7,bath:3,floor:null,floors:3,
+   imgs:["https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800","https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800","https://images.unsplash.com/photo-1600573472556-e636c2acda9e?w=800"],
+   badges:["hot"],desc:"Exkluzivní vila v prestižní lokalitě. Třípodlažní rezidence s bazénem, wellness, vinným sklepem, zahradou 1200 m². Interiér od architektonického studia, prémiové materiály. Smart Home.",
+   amenities:["Bazén","Wellness","Vinný sklep","Smart Home","Dvojgaráž","Zahrada 1200 m²","Security systém","Designový interiér"],energy:"A",avail:"Po dohodě",built:2021,recon:null,added:7},
+  {id:"BT-006",type:"byt",tx:"prodej",title:"Byt 2+1 po rekonstrukci, Žabovřesky",loc:"Brno",addr:"Brno — Žabovřesky",price:5800000,size:68,rooms:2,bath:1,floor:3,floors:5,
+   imgs:["https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800","https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800","https://images.unsplash.com/photo-1560448075-bb485b067938?w=800"],
+   badges:["new"],desc:"Kompletně zrekonstruovaný byt 2+1 v Žabovřeskách. Nová kuchyňská linka, koupelna, podlahy, rozvody. Dva pokoje, kuchyň, předsíň, komora. Tramvaj 2 min.",
+   amenities:["Rekonstrukce 2025","Komora","Tramvaj 2 min","Tichá ulice","Sklep","Plastová okna"],energy:"C",avail:"Ihned",built:1975,recon:2025,added:2},
+  {id:"BT-007",type:"pozemek",tx:"prodej",title:"Stavební pozemek 1200 m², Jesenice",loc:"Praha",addr:"Jesenice u Prahy",price:8400000,size:1200,rooms:0,bath:0,floor:null,floors:null,
+   imgs:["https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800","https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=800"],
+   badges:[],desc:"Rovinatý stavební pozemek. Všechny IS na hranici (elektřina, voda, kanalizace, plyn). ÚP umožňuje výstavbu RD. Klidná lokalita s kompletní občanskou vybaveností.",
+   amenities:["IS na hranici","Rovinatý","Klidná lokalita","ÚP pro RD","Škola 500 m","Obchody 300 m"],energy:null,avail:"Ihned",built:null,recon:null,added:10},
+  {id:"BT-008",type:"byt",tx:"pronájem",title:"Podkrovní byt 1+kk, Malá Strana",loc:"Praha",addr:"Praha 1 — Malá Strana",price:22000,size:38,rooms:1,bath:1,floor:5,floors:5,
+   imgs:["https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800","https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800"],
+   badges:[],desc:"Útulný podkrovní byt s výhledem na Pražský hrad. Kuchyňský kout, sprchový kout, WC. Historický dům v centru Malé Strany. Částečně zařízený.",
+   amenities:["Výhled na Hrad","Historický dům","Částečně zařízený","Centrum","Tram 1 min"],energy:"D",avail:"Od 1.6.2026",built:1780,recon:2019,added:4},
+  {id:"BT-009",type:"komerční",tx:"prodej",title:"Kancelářský komplex 450 m², Ostrava",loc:"Ostrava",addr:"Ostrava — Poruba",price:15000000,size:450,rooms:12,bath:4,floor:null,floors:3,
+   imgs:["https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800","https://images.unsplash.com/photo-1497366216548-37526070297c?w=800","https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=800"],
+   badges:["price"],desc:"Samostatný kancelářský objekt — 12 kanceláří, zasedací místnost, kuchyňka, soc. zázemí. Parkoviště 20 míst. Kompletní revitalizace vč. zateplení.",
+   amenities:["Parkoviště 20 míst","Zasedací místnost","Klimatizace","Optické připojení","Zatepleno","Alarm"],energy:"B",avail:"Ihned",built:2005,recon:2023,added:8},
+  {id:"BT-010",type:"byt",tx:"prodej",title:"Mezonetový byt 4+kk, Smíchov",loc:"Praha",addr:"Praha 5 — Smíchov",price:16800000,size:145,rooms:4,bath:2,floor:5,floors:6,
+   imgs:["https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800","https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800","https://images.unsplash.com/photo-1600566753376-12c8ab7c17a0?w=800"],
+   badges:["new","hot"],desc:"Unikátní mezonet ve 2 úrovních. Dolní: obývák s kuchyní, pracovna, koupelna, terasa. Horní: master ložnice s en-suite, 2 dětské pokoje. Garáž, sklep.",
+   amenities:["Mezonet","Terasa","Garáž","2x koupelna","Novostavba","Sklep","Smart Home","Výhled"],energy:"A",avail:"Od 1.7.2026",built:2025,recon:null,added:0},
+  {id:"BT-011",type:"dům",tx:"pronájem",title:"Řadový dům 4+kk, Plzeň",loc:"Plzeň",addr:"Plzeň — Slovany",price:32000,size:130,rooms:4,bath:1,floor:null,floors:2,
+   imgs:["https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=800","https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800"],
+   badges:[],desc:"Řadový RD v klidné rezidenční čtvrti. 4 pokoje, koupelna, WC, garáž, předzahrádka. V dobrém stavu, nezařízený. Zvířata OK.",
+   amenities:["Zahrádka","Garáž","Zvířata OK","Klidná ulice","Škola 5 min","MHD 3 min"],energy:"C",avail:"Ihned",built:2008,recon:null,added:6},
+  {id:"BT-012",type:"pozemek",tx:"prodej",title:"Pozemek s výhledem 2500 m², Liberec",loc:"Liberec",addr:"Liberec — Vratislavice",price:4200000,size:2500,rooms:0,bath:0,floor:null,floors:null,
+   imgs:["https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800","https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800"],
+   badges:["price"],desc:"Stavební pozemek s panoramatickým výhledem na Ještěd. Mírně svažitý, ideální pro architektonicky zajímavou stavbu. Elektřina a voda na pozemku.",
+   amenities:["Výhled na Ještěd","Elektřina","Voda","Přístupová cesta","2500 m²"],energy:null,avail:"Ihned",built:null,recon:null,added:12}
+];
+
+// Initialize with fallback
+DB = [...FALLBACK_DB];
+
+// ===== LIVE DATA LOADER =====
+// Smart data loader: tries Netlify Functions API first, then static JSON, then fallback DB
+async function tryFetch(urls) {
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url, {signal: AbortSignal.timeout(15000)});
+      if (resp.ok) return await resp.json();
+    } catch(e) { /* try next */ }
+  }
+  return null;
+}
+
+async function loadLiveData() {
+  console.log("[BydlímTu] Načítám živá data...");
+
+  // Load properties — try API first, then static file
+  try {
+    const propData = await tryFetch([
+      "/api/properties",
+      "data/properties.json?t=" + Date.now()
+    ]);
+    if (propData && propData.properties && propData.properties.length > 0) {
+      DB = propData.properties;
+      DATA_LOADED = true;
+      console.log(`[BydlímTu] Načteno ${DB.length} nemovitostí ze Sreality.cz (aktualizace: ${propData.updated})`);
+
+      // Update viewer counts for new IDs
+      DB.forEach(p => {
+        if (!viewerCounts[p.id]) viewerCounts[p.id] = Math.floor(Math.random() * 8) + 1;
+      });
+
+      // Update stats
+      const countEl = document.querySelector('[data-target="1247"]');
+      if (countEl) countEl.dataset.target = DB.length;
+
+      // Show live badge
+      showDataSourceBadge(propData.updated, DB.length);
+
+      // Update subtitle
+      const sub = document.getElementById("propertiesSubtitle");
+      if(sub) sub.textContent = `${DB.length} reálných nemovitostí z portálu Sreality.cz — aktualizováno průběžně`;
+
+      // Show freshness indicator
+      updateFreshnessBar(propData.updated, propData.source);
+
+      // Re-render
+      renderProperties(true);
+    }
+  } catch (e) {
+    console.log("[BydlímTu] Živá data nemovitostí nedostupná, používám ukázková data.", e);
+  }
+
+  // Load mortgage rates — try API first, then static file
+  try {
+    const ratesData = await tryFetch([
+      "/api/rates",
+      "data/rates.json?t=" + Date.now()
+    ]);
+    if (ratesData) {
+      RATES_DATA = ratesData;
+      console.log(`[BydlímTu] Načteny hypoteční sazby: Hypoindex ${RATES_DATA.hypoindex}%, nejnižší ${RATES_DATA.best_rate}%`);
+
+      // Update mortgage calculator default rate
+      const rateInput = document.getElementById("calcRate");
+      if (rateInput && RATES_DATA.avg_rate) {
+        rateInput.value = RATES_DATA.avg_rate;
+      }
+
+      // Update bank list in calculator section
+      updateBankDisplay();
+    }
+  } catch (e) {
+    console.log("[BydlímTu] Živé sazby nedostupné, používám výchozí hodnoty.", e);
+  }
+}
+
+function showDataSourceBadge(updated, count) {
+  const badge = document.createElement("div");
+  badge.className = "data-source-badge";
+  const date = new Date(updated);
+  const timeStr = date.toLocaleString("cs-CZ", {day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
+  badge.innerHTML = `<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:#10b981;animation:livePulse 2s infinite;display:inline-block"></span> Živá data ze Sreality.cz · ${count} nemovitostí · Aktualizace: ${timeStr}`;
+  badge.style.cssText = "position:fixed;bottom:12px;left:12px;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);padding:8px 14px;border-radius:8px;font-size:.72rem;color:#374151;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:998;display:flex;align-items:center;gap:6px;border:1px solid #e5e7eb";
+  document.body.appendChild(badge);
+  // Auto-hide after 8s
+  setTimeout(() => { badge.style.opacity = "0"; badge.style.transition = "opacity 1s"; setTimeout(() => badge.remove(), 1000); }, 8000);
+}
+
+function updateBankDisplay() {
+  if (!RATES_DATA || !RATES_DATA.banks) return;
+  const bankContainer = document.getElementById("calcBanks");
+  if (bankContainer) {
+    bankContainer.innerHTML = RATES_DATA.banks.slice(0, 6).map(b =>
+      `<span class="calc-bank" title="${b.rate}% p.a. — ${b.note || b.fixation}">${b.name} <small style="color:var(--primary);font-weight:600">${b.rate}%</small></span>`
+    ).join("");
+  }
+  const info = document.getElementById("ratesInfo");
+  if (info) {
+    const date = new Date(RATES_DATA.updated).toLocaleDateString("cs-CZ");
+    info.innerHTML = `<span class="live-dot" style="width:5px;height:5px;border-radius:50%;background:#10b981;animation:livePulse 2s infinite;display:inline-block;margin-right:4px"></span> Sazby aktualizovány: ${date} · Hypoindex: ${RATES_DATA.hypoindex}% · Nejnižší: ${RATES_DATA.best_rate}%`;
+  }
+}
+
+function updateFreshnessBar(updated, source) {
+  const bar = document.getElementById("dataFreshness");
+  const text = document.getElementById("dataFreshnessText");
+  if (!bar || !text) return;
+
+  const updatedDate = new Date(updated);
+  const now = new Date();
+  const diffMin = Math.round((now - updatedDate) / 60000);
+  const timeStr = updatedDate.toLocaleString("cs-CZ", {day:"numeric", month:"numeric", hour:"2-digit", minute:"2-digit"});
+
+  let freshness, label;
+  if (diffMin < 120) {
+    freshness = "fresh";
+    label = `${DB.length} nemovitostí ze ${source || "Sreality.cz"} · Aktualizace: ${timeStr} (před ${diffMin} min)`;
+  } else if (diffMin < 1440) {
+    freshness = "stale";
+    const hours = Math.round(diffMin / 60);
+    label = `${DB.length} nemovitostí · Poslední aktualizace: ${timeStr} (před ${hours}h) — doporučujeme obnovit`;
+  } else {
+    freshness = "error";
+    label = `Data mohou být zastaralá (${timeStr}). Spusťte python3 update.py pro aktualizaci.`;
+  }
+
+  bar.style.display = "flex";
+  bar.className = "data-freshness " + freshness;
+  const dot = bar.querySelector(".live-dot");
+  if (dot) dot.style.background = freshness === "fresh" ? "#10b981" : freshness === "stale" ? "#f59e0b" : "#ef4444";
+  text.textContent = label;
+}
+
+// Auto-refresh every 60 minutes
+setInterval(() => loadLiveData(), 60 * 60 * 1000);
+
+// ===== STATE =====
+let favorites = new Set();
+let currentFilter = "all";
+let currentSort = "newest";
+let displayCount = 6;
+let chatOpen = false;
+let chatInited = false;
+let chatContext = {};
+let leadStage = 0;
+let leadData = {};
+let compareList = [];
+let recentlyViewed = [];
+const viewerCounts = {};
+DB.forEach(p => viewerCounts[p.id] = Math.floor(Math.random()*8)+1);
+
+// ===== UTILS =====
+function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g," ")}
+function fmtPrice(p,tx){return tx==="pronájem"?fmt(p)+" Kč/měs.":fmt(p)+" Kč"}
+function priceM2(p){return p.size>0?fmt(Math.round(p.price/p.size))+" Kč/m²":""}
+function timeAgo(days){if(days===0)return"Právě přidáno";if(days===1)return"Včera";if(days<7)return"Před "+days+" dny";return"Před "+Math.floor(days/7)+" týdny"}
+function timeNow(){const d=new Date();return d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")}
+function greeting(){const h=new Date().getHours();if(h<12)return"Dobré ráno";if(h<18)return"Dobrý den";return"Dobrý večer"}
+function formatPriceInput(el){let v=el.value.replace(/\D/g,"");el.value=v?fmt(parseInt(v)):""}
+function parsePriceInput(el){return parseInt(el.value.replace(/\s/g,""))||0}
+function showToast(msg,type="success"){const c=document.getElementById("toastContainer"),t=document.createElement("div");t.className="toast "+type;t.innerHTML=`<i class="fas fa-${type==="success"?"check-circle":"exclamation-circle"}"></i><span>${msg}</span>`;c.appendChild(t);setTimeout(()=>{t.style.opacity="0";t.style.transition="opacity .3s";setTimeout(()=>t.remove(),300)},3500)}
+
+// ===== FILTERING =====
+function getFiltered(){
+  let r=[...DB];
+  if(currentFilter!=="all") r=r.filter(p=>p.type===currentFilter);
+  const ht=document.getElementById("heroType").value;
+  const hl=document.getElementById("heroLoc").value;
+  const hpf=parsePriceInput(document.getElementById("heroPriceFrom"));
+  const hpt=parsePriceInput(document.getElementById("heroPriceTo"))||Infinity;
+  const htx=document.getElementById("heroTx").value;
+  if(ht&&currentFilter==="all") r=r.filter(p=>p.type===ht);
+  if(hl) r=r.filter(p=>p.loc===hl);
+  if(hpf>0) r=r.filter(p=>p.price>=hpf);
+  if(hpt<Infinity) r=r.filter(p=>p.price<=hpt);
+  if(htx) r=r.filter(p=>p.tx===htx);
+  switch(currentSort){
+    case"price-asc":r.sort((a,b)=>a.price-b.price);break;
+    case"price-desc":r.sort((a,b)=>b.price-a.price);break;
+    case"size-desc":r.sort((a,b)=>b.size-a.size);break;
+    default:r.sort((a,b)=>a.added-b.added);
+  }
+  return r;
+}
+
+// ===== RENDER =====
+function renderProperties(reset){
+  if(reset)displayCount=6;
+  const filtered=getFiltered();
+  const show=filtered.slice(0,displayCount);
+  document.getElementById("propertiesCount").textContent=`Zobrazeno ${show.length} z ${filtered.length} nemovitostí`;
+  const grid=document.getElementById("propertiesGrid");
+  if(filtered.length===0){
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><h3>Žádné nemovitosti</h3><p>Zkuste upravit filtry nebo vyhledávací kritéria.</p></div>`;
+    document.getElementById("loadMoreWrap").style.display="none";return;
+  }
+  grid.innerHTML=show.map((p,i)=>`
+    <div class="property-card" onclick="openModal('${p.id}')" style="animation-delay:${i*60}ms;transform:translateY(10px)" role="article" aria-label="${p.title}">
+      <div class="property-img" style="background-image:url('${p.imgs[0]}')" role="img" aria-label="Foto ${p.title}">
+        <div class="badges">${p.badges.map(b=>b==="new"?'<span class="badge badge-new">Novinka</span>':b==="hot"?'<span class="badge badge-hot">Top</span>':'<span class="badge badge-price">Akce</span>').join("")}</div>
+        <button class="fav-btn ${favorites.has(p.id)?"active":""}" onclick="event.stopPropagation();toggleFav('${p.id}')" aria-label="Oblíbené"><i class="fa${favorites.has(p.id)?"s":"r"} fa-heart"></i></button>
+        <div class="img-count"><i class="fas fa-camera"></i> ${p.imgs.length}</div>
+        <div class="viewers"><span class="vdot"></span>${viewerCounts[p.id]} prohlíží</div>
+      </div>
+      <div class="property-body">
+        <div class="property-type">${p.type} • ${p.tx}</div>
+        <div class="property-title">${p.title}</div>
+        <div class="property-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${p.addr}</div>
+        <div class="property-features">
+          ${p.size?`<span class="property-feat"><i class="fas fa-ruler-combined"></i>${p.size} m²</span>`:""}
+          ${p.rooms?`<span class="property-feat"><i class="fas fa-door-open"></i>${p.rooms}</span>`:""}
+          ${p.bath?`<span class="property-feat"><i class="fas fa-bath"></i>${p.bath}</span>`:""}
+          ${p.floor!==null?`<span class="property-feat"><i class="fas fa-building"></i>${p.floor}./${p.floors}. NP</span>`:""}
+        </div>
+        <div class="property-footer">
+          <div><div class="property-price">${fmtPrice(p.price,p.tx)}</div>${p.size?`<span class="price-m2">${priceM2(p)}</span>`:""}</div>
+          <button class="property-detail-btn">Detail</button>
+        </div>
+        <div class="property-time">${timeAgo(p.added)}${p.source?` <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" class="source-link" onclick="event.stopPropagation()"><i class="fas fa-external-link-alt"></i> Sreality</a>`:""}</div>
+      </div>
+    </div>`).join("");
+  document.getElementById("loadMoreWrap").style.display=displayCount>=filtered.length?"none":"block";
+}
+function loadMore(){displayCount+=6;renderProperties()}
+
+// ===== FILTERS =====
+document.getElementById("filterTabs").addEventListener("click",e=>{
+  if(!e.target.classList.contains("filter-tab"))return;
+  document.querySelectorAll(".filter-tab").forEach(t=>t.classList.remove("active"));
+  e.target.classList.add("active");
+  currentFilter=e.target.dataset.filter;
+  ["heroType","heroLoc","heroPriceFrom","heroPriceTo","heroTx"].forEach(id=>document.getElementById(id).value="");
+  renderProperties(true);
+});
+document.getElementById("sortSelect").addEventListener("change",()=>{currentSort=document.getElementById("sortSelect").value;renderProperties()});
+document.getElementById("heroSearchForm").addEventListener("submit",e=>{
+  e.preventDefault();currentFilter="all";
+  document.querySelectorAll(".filter-tab").forEach(t=>t.classList.remove("active"));
+  document.querySelector('[data-filter="all"]').classList.add("active");
+  renderProperties(true);
+  document.getElementById("properties").scrollIntoView({behavior:"smooth"});
+  showToast(`Nalezeno ${getFiltered().length} nemovitostí`);
+});
+
+// ===== FAVORITES =====
+function toggleFav(id){
+  if(favorites.has(id)){favorites.delete(id);showToast("Odebráno z oblíbených")}
+  else{favorites.add(id);showToast("Přidáno do oblíbených")}
+  updateFavBadge();renderProperties();renderFavDrawer();
+}
+function updateFavBadge(){const c=document.getElementById("favCount");c.textContent=favorites.size;c.classList.toggle("show",favorites.size>0)}
+function toggleFavDrawer(){document.getElementById("favDrawer").classList.toggle("open");document.getElementById("favOverlay").classList.toggle("show");renderFavDrawer()}
+function renderFavDrawer(){
+  const body=document.getElementById("favBody");
+  if(favorites.size===0){body.innerHTML='<p style="text-align:center;color:var(--text-lighter);padding:40px 0">Zatím nemáte žádné oblíbené.</p>';return}
+  body.innerHTML=[...favorites].map(id=>{const p=DB.find(x=>x.id===id);if(!p)return"";return`
+    <div class="fav-item" onclick="toggleFavDrawer();openModal('${p.id}')">
+      <div class="fav-item-img" style="background-image:url('${p.imgs[0]}')"></div>
+      <div class="fav-item-info"><div class="fav-item-title">${p.title}</div><div class="fav-item-price">${fmtPrice(p.price,p.tx)}</div></div>
+      <button class="fav-item-remove" onclick="event.stopPropagation();toggleFav('${p.id}')"><i class="fas fa-trash-alt"></i></button>
+    </div>`}).join("");
+}
+
+// ===== MODAL =====
+let modalImg=0;let modalId=null;
+function openModal(id){
+  const p=DB.find(x=>x.id===id);if(!p)return;
+  modalImg=0;modalId=id;chatContext.propertyId=id;
+  if(!recentlyViewed.includes(id)){recentlyViewed.unshift(id);if(recentlyViewed.length>3)recentlyViewed.pop()}
+  viewerCounts[id]=Math.min(viewerCounts[id]+1,15);
+  const m=document.getElementById("propertyModal");
+  m.innerHTML=`<div class="modal-content">
+    <div class="modal-gallery" id="mGallery" style="background-image:url('${p.imgs[0]}')" role="img" aria-label="${p.title}">
+      <button class="modal-close" onclick="closeModal()" aria-label="Zavřít"><i class="fas fa-times"></i></button>
+      ${p.imgs.length>1?`<button class="gallery-nav gallery-prev" onclick="event.stopPropagation();navImg(-1)"><i class="fas fa-chevron-left"></i></button>
+      <button class="gallery-nav gallery-next" onclick="event.stopPropagation();navImg(1)"><i class="fas fa-chevron-right"></i></button>
+      <div class="gallery-counter" id="gCount">1 / ${p.imgs.length}</div>`:""}
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div><div class="property-type" style="margin-bottom:6px">${p.type} • ${p.tx}</div>
+        <div class="modal-title">${p.title}</div>
+        <div class="modal-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${p.addr}</div></div>
+        <div style="text-align:right"><div class="modal-price">${fmtPrice(p.price,p.tx)}</div>${p.size?`<div class="modal-price m2">${priceM2(p)}</div>`:""}<div class="modal-id">ID: ${p.id}${p.source?` · <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" style="color:var(--primary);font-size:.7rem"><i class="fas fa-external-link-alt"></i> Zobrazit na Sreality.cz</a>`:""}</div></div>
+      </div>
+      <div class="modal-features">
+        ${p.size?`<div class="modal-feat"><i class="fas fa-ruler-combined"></i><div class="val">${p.size} m²</div><div class="lab">Plocha</div></div>`:""}
+        ${p.rooms?`<div class="modal-feat"><i class="fas fa-door-open"></i><div class="val">${p.rooms}</div><div class="lab">Pokojů</div></div>`:""}
+        ${p.bath?`<div class="modal-feat"><i class="fas fa-bath"></i><div class="val">${p.bath}</div><div class="lab">Koupelny</div></div>`:""}
+        ${p.energy?`<div class="modal-feat"><i class="fas fa-leaf"></i><div class="val">${p.energy}</div><div class="lab">Energie</div></div>`:""}
+        ${p.built?`<div class="modal-feat"><i class="fas fa-calendar"></i><div class="val">${p.built}</div><div class="lab">Stavba</div></div>`:""}
+        ${p.avail?`<div class="modal-feat"><i class="fas fa-key"></i><div class="val" style="font-size:.8rem">${p.avail}</div><div class="lab">Nastěhování</div></div>`:""}
+        ${p.floor!==null?`<div class="modal-feat"><i class="fas fa-building"></i><div class="val">${p.floor}/${p.floors}</div><div class="lab">Patro</div></div>`:""}
+        ${p.recon?`<div class="modal-feat"><i class="fas fa-tools"></i><div class="val">${p.recon}</div><div class="lab">Rekonstrukce</div></div>`:""}
+      </div>
+      <div class="modal-desc"><h4>Popis</h4><p>${p.desc}</p></div>
+      <h4 style="margin-bottom:8px">Vybavení</h4>
+      <div class="modal-amenities">${p.amenities.map(a=>`<span class="amenity-tag">${a}</span>`).join("")}</div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="shareProperty('${p.id}')"><i class="fas fa-share-alt"></i> Sdílet</button>
+        <button class="btn-ghost" onclick="addToCompare('${p.id}')"><i class="fas fa-exchange-alt"></i> Porovnat</button>
+        <button class="btn-ghost" onclick="toggleFav('${p.id}')"><i class="fa${favorites.has(p.id)?"s":"r"} fa-heart"></i> Oblíbené</button>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:18px;font-size:.8rem;color:var(--text-light);display:flex;align-items:center;gap:8px">
+        <span class="vdot" style="width:7px;height:7px;border-radius:50%;background:var(--success);animation:livePulse 2s infinite;flex-shrink:0"></span>
+        <span><strong>${viewerCounts[p.id]}</strong> lidí si právě prohlíží tuto nemovitost</span>
+      </div>
+      <div class="modal-cta">
+        <button class="btn-primary" onclick="openChat();botMsg('Zajímáte se o <strong>${p.title}</strong> (${p.id}). Rád zodpovím jakékoliv dotazy! Co vás zajímá?',['Domluvit prohlídku','Okolí a vybavenost','Cena za m²','Chci kontakt na makléře'])"><i class="fas fa-robot"></i> Zeptat se AI</button>
+        <button class="btn-outline" onclick="closeModal();document.getElementById('contact').scrollIntoView({behavior:'smooth'})"><i class="fas fa-phone"></i> Kontaktovat</button>
+      </div>
+    </div></div>`;
+  m.classList.add("active");document.body.style.overflow="hidden";
+}
+function navImg(dir){const p=DB.find(x=>x.id===modalId);if(!p)return;modalImg=(modalImg+dir+p.imgs.length)%p.imgs.length;document.getElementById("mGallery").style.backgroundImage=`url('${p.imgs[modalImg]}')`;const c=document.getElementById("gCount");if(c)c.textContent=`${modalImg+1} / ${p.imgs.length}`}
+function closeModal(){document.getElementById("propertyModal").classList.remove("active");document.body.style.overflow=""}
+function shareProperty(id){const p=DB.find(x=>x.id===id);if(!p)return;const url=location.href.split("?")[0]+"?p="+id;if(navigator.share)navigator.share({title:p.title,text:fmtPrice(p.price,p.tx),url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("Odkaz zkopírován do schránky")}}
+
+// ===== COMPARISON =====
+function addToCompare(id){
+  if(compareList.includes(id)){compareList=compareList.filter(x=>x!==id);showToast("Odebráno z porovnání");return}
+  if(compareList.length>=3){showToast("Maximálně 3 nemovitosti k porovnání","error");return}
+  compareList.push(id);showToast("Přidáno k porovnání ("+compareList.length+"/3)");
+  if(compareList.length>=2)showComparison();
+}
+function showComparison(){
+  const ps=compareList.map(id=>DB.find(x=>x.id===id)).filter(Boolean);
+  const rows=[["Cena",p=>fmtPrice(p.price,p.tx)],["Plocha",p=>p.size?p.size+" m²":"—"],["Cena/m²",p=>priceM2(p)||"—"],["Pokoje",p=>p.rooms||"—"],["Koupelny",p=>p.bath||"—"],["Energie",p=>p.energy||"—"],["Stav",p=>p.recon?"Rekonstrukce "+p.recon:p.built?"Stavba "+p.built:"—"],["Dostupnost",p=>p.avail||"—"]];
+  document.getElementById("comparisonContent").innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 style="font-size:1.1rem;font-weight:600">Porovnání nemovitostí</h3>
+      <button onclick="closeComparison()" style="background:none;font-size:1.2rem;color:var(--text-light)"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="overflow-x:auto"><table class="comparison-table"><thead><tr><th>Parametr</th>${ps.map(p=>`<th>${p.title}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(([label,fn])=>`<tr><td>${label}</td>${ps.map(p=>`<td>${fn(p)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="compareList=[];closeComparison()">Vymazat porovnání</button></div>`;
+  document.getElementById("comparisonModal").classList.add("active");
+}
+function closeComparison(){document.getElementById("comparisonModal").classList.remove("active")}
+
+// ===== MORTGAGE CALCULATOR =====
+function calcMortgage(){
+  const a=parsePriceInput(document.getElementById("calcAmount"));
+  const r=parseFloat(document.getElementById("calcRate").value)/100/12;
+  const m=parseInt(document.getElementById("calcYears").value)*12;
+  if(!a||a<=0||!r||r<=0||!m){showToast("Vyplňte všechna pole","error");return}
+  const monthly=(a*(r*Math.pow(1+r,m)))/(Math.pow(1+r,m)-1);
+  const total=monthly*m;
+  document.getElementById("calcMonthly").textContent=fmt(Math.round(monthly))+" Kč";
+  let detailText=`Celkem zaplatíte: ${fmt(Math.round(total))} Kč | Přeplatek: ${fmt(Math.round(total-a))} Kč`;
+  // Show best bank if available
+  if(RATES_DATA && RATES_DATA.banks && RATES_DATA.banks.length){
+    const best=RATES_DATA.banks[0];
+    const bestR=best.rate/100/12;
+    const bestMonthly=(a*(bestR*Math.pow(1+bestR,m)))/(Math.pow(1+bestR,m)-1);
+    if(Math.abs(monthly-bestMonthly)>100){
+      detailText+=`\nNejlepší nabídka: ${best.name} (${best.rate}%) = ${fmt(Math.round(bestMonthly))} Kč/měs.`;
+    }
+  }
+  document.getElementById("calcDetail").textContent=detailText;
+  document.getElementById("calcDetail").style.whiteSpace="pre-line";
+  document.getElementById("calcResult").classList.add("show");
+}
+function getCurrentRate(){ return RATES_DATA ? RATES_DATA.avg_rate : 4.5; }
+function getBestRate(){ return RATES_DATA ? RATES_DATA.best_rate : 4.18; }
+
+// ===== CHATBOT ENGINE =====
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById("chatWindow").classList.toggle("active",chatOpen);
+  document.getElementById("chatTrigger").classList.toggle("open",chatOpen);
+  document.getElementById("chatIcon").className=chatOpen?"fas fa-times":"fas fa-comment-dots";
+  document.getElementById("chatNotif").classList.remove("show");
+  if(chatOpen){document.getElementById("chatInput").focus();if(!chatInited){chatInited=true;setTimeout(()=>botMsg(greeting()+"! Jsem AI asistent <strong>BydlímTu Reality</strong>. Pomohu vám najít ideální nemovitost, zodpovím dotazy a poradím s financováním.",["Hledám byt v Praze","Chci prodat nemovitost","Kolik stojí pronájem?","Spočítat hypotéku"]),400)}}
+}
+function openChat(){if(!chatOpen)toggleChat()}
+
+function addMsg(who,html){
+  const c=document.getElementById("chatMessages"),d=document.createElement("div");
+  d.className="chat-msg "+who;d.innerHTML=html+`<span class="timestamp">${timeNow()}</span>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function botMsg(html,qr){
+  addMsg("bot",html);
+  if(qr&&qr.length){const c=document.getElementById("chatMessages"),d=document.createElement("div");d.className="quick-replies";
+  qr.forEach(t=>{const b=document.createElement("button");b.className="quick-reply";b.textContent=t;b.onclick=()=>{document.getElementById("chatInput").value=t;sendChat()};d.appendChild(b)});
+  c.appendChild(d);c.scrollTop=c.scrollHeight}
+}
+function showTyping(){const c=document.getElementById("chatMessages"),d=document.createElement("div");d.className="chat-msg bot";d.id="typingMsg";d.innerHTML='<div class="typing-indicator"><span></span><span></span><span></span></div>';c.appendChild(d);c.scrollTop=c.scrollHeight}
+function hideTyping(){const el=document.getElementById("typingMsg");if(el)el.remove()}
+
+function sendChat(){
+  const inp=document.getElementById("chatInput"),txt=inp.value.trim();
+  if(!txt)return;inp.value="";
+  addMsg("user",txt.replace(/</g,"&lt;").replace(/>/g,"&gt;"));
+  showTyping();
+  const delay=600+Math.random()*800;
+  if(leadStage>0){setTimeout(()=>{hideTyping();processLead(txt)},delay);return}
+  setTimeout(()=>{hideTyping();const r=respond(txt);botMsg(r.html,r.qr)},delay);
+}
+document.getElementById("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
+
+// ===== RESPONSE ENGINE =====
+function respond(input){
+  const L=input.toLowerCase();
+
+  // SEARCH
+  if(L.match(/hled[áa]m|chci.*(?:byt|dům|dom)|koupit|sháním|pot[řr]ebuji|najít/)){
+    const m=searchDB(L);
+    if(m.length){chatContext.lastSearch=m;return{html:`Našel jsem <strong>${m.length} nemovitostí</strong>:${renderChatCards(m.slice(0,3))}<div style="font-size:.8rem;color:var(--text-light);margin-top:6px">Klikněte pro detail nebo upřesněte požadavky.</div>`,qr:["Chci levnější","Větší plochu","Jiná lokalita","Kontakt na makléře"]}}
+    return{html:"Bohužel jsem nic nenašel podle vašich kritérií. Můžete mi upřesnit typ, lokalitu nebo rozpočet?",qr:["Byty v Praze","Domy v Brně","Pronájem do 25 000","Zobrazit vše"]}
+  }
+
+  // SHOW ALL
+  if(L.match(/zobraz|všechny|celou|co.*máte|ukaz|nabíd/)){
+    return{html:`V nabídce máme <strong>${DB.length} nemovitostí</strong> — ${DB.filter(p=>p.type==="byt").length} bytů, ${DB.filter(p=>p.type==="dům").length} domů, ${DB.filter(p=>p.type==="komerční").length} komerčních a ${DB.filter(p=>p.type==="pozemek").length} pozemků.`,qr:["Byty","Domy","Komerční","Pozemky"]}
+  }
+
+  // CHEAPER / BIGGER (CONTEXT)
+  if(L.match(/levnější|levněj|nižší cen|cheaper/)){
+    if(chatContext.lastSearch){const m=chatContext.lastSearch.sort((a,b)=>a.price-b.price).slice(0,3);return{html:`Zde jsou nejdostupnější z vašeho hledání:${renderChatCards(m)}`,qr:["Ještě levnější","Kontakt","Jiný typ"]}}
+    return{html:"V jakém cenovém rozmezí hledáte? Řekněte mi rozpočet a najdu odpovídající nabídky.",qr:["Do 5 mil.","Do 10 mil.","Pronájem do 20 000"]}
+  }
+  if(L.match(/větší|více.*m[2²]|prostornější|bigger/)){
+    if(chatContext.lastSearch){const m=chatContext.lastSearch.sort((a,b)=>b.size-a.size).slice(0,3);return{html:`Největší z vašeho hledání:${renderChatCards(m)}`,qr:["Ještě větší","Kontakt","Jiná lokalita"]}}
+    return{html:"Jakou minimální plochu potřebujete?",qr:["Od 60 m²","Od 100 m²","Od 200 m²"]}
+  }
+
+  // PRICES
+  if(L.match(/cen[auy]|kolik.*sto[jí]|rozpočet|za kolik|nejlevnější|nejdražší/)){
+    const s=[...DB].sort((a,b)=>a.price-b.price);
+    const avg=Math.round(DB.filter(p=>p.tx==="prodej").reduce((s,p)=>s+p.price,0)/DB.filter(p=>p.tx==="prodej").length);
+    return{html:`<strong>Cenové rozpětí:</strong><br>Od: ${fmtPrice(s[0].price,s[0].tx)}<br>Do: ${fmtPrice(s[s.length-1].price,s[s.length-1].tx)}<br>Průměr (prodej): ${fmt(avg)} Kč<br><br>V jakém rozpočtu hledáte?`,qr:["Do 5 mil.","5-10 mil.","10-20 mil.","Pronájem"]}
+  }
+
+  // RENTALS
+  if(L.match(/pronáj|nájemn|rent|měsíc/)){
+    const r=DB.filter(p=>p.tx==="pronájem");
+    return{html:`K pronájmu máme <strong>${r.length} nemovitostí</strong>:${renderChatCards(r.slice(0,3))}`,qr:["V Praze","V Brně","Do 25 000/měs","Kontakt"]}
+  }
+
+  // SELL
+  if(L.match(/prod[áa][tm]|prodat|prodej.*nemov/)){
+    return{html:"Chcete prodat nemovitost? Nabízíme:<br>• Bezplatný odhad tržní ceny<br>• Profesionální fotografie a 3D prohlídku<br>• Marketing na 15+ portálech<br>• Právní servis<br>• AI chatbot pro kupující 24/7<br><br>Chcete nezávaznou konzultaci?",qr:["Ano, chci odhad","Kolik stojí služby?","Jak dlouho trvá prodej?"]}
+  }
+
+  // MORTGAGE
+  if(L.match(/hypot[ée]|financov|úv[ěe]r|splát|spočítat|kalkul/)){
+    const rateInfo = RATES_DATA
+      ? `Aktuální průměrná sazba je <strong>${RATES_DATA.avg_rate}%</strong> (Hypoindex ${RATES_DATA.hypoindex}%). Nejnižší nabídka: <strong>${RATES_DATA.best_rate}%</strong> u ${RATES_DATA.banks[0].name}.`
+      : "Aktuální průměrná sazba se pohybuje kolem 4,5–5 %.";
+    return{html:`Rád pomohu s hypotékou! ${rateInfo}<br><br>Jakou částku chcete financovat?`,qr:["3 miliony","5 milionů","8 milionů","Otevřít kalkulačku","Srovnání bank"]}
+  }
+
+  // BANK COMPARISON
+  if(L.match(/srovnání.*bank|přehled.*bank|bank.*sazb|která.*banka/)){
+    if(RATES_DATA && RATES_DATA.banks){
+      const bankList = RATES_DATA.banks.slice(0,5).map(b=>`• <strong>${b.name}</strong>: ${b.rate}% (${b.fixation})`).join("<br>");
+      return{html:`Aktuální sazby bank (${new Date(RATES_DATA.updated).toLocaleDateString("cs-CZ")}):<br><br>${bankList}<br><br>Chcete spočítat splátku u konkrétní banky?`,qr:["Spočítat splátku","Nejlevnější banka","Kontakt na poradce"]}
+    }
+    return{html:"Srovnání bank připravuji. Mezitím mohu spočítat orientační splátku.",qr:["3 miliony","5 milionů","Otevřít kalkulačku"]}
+  }
+
+  // MORTGAGE AMOUNTS
+  if(L.match(/(\d+)\s*mil/)){
+    const num=parseInt(L.match(/(\d+)/)[1])*1000000;
+    const rate = RATES_DATA ? RATES_DATA.avg_rate : 4.5;
+    const bestRate = RATES_DATA ? RATES_DATA.best_rate : 4.18;
+    const r=rate/100/12,m=240;
+    const monthly=(num*(r*Math.pow(1+r,m)))/(Math.pow(1+r,m)-1);
+    const br=bestRate/100/12;
+    const bestMonthly=(num*(br*Math.pow(1+br,m)))/(Math.pow(1+br,m)-1);
+    let html=`Při úvěru <strong>${fmt(num)} Kč</strong> (sazba ${rate}%, 20 let):<br><br>Měsíční splátka: <strong>${fmt(Math.round(monthly))} Kč</strong><br>Celkem zaplatíte: ${fmt(Math.round(monthly*m))} Kč<br>Přeplatek: ${fmt(Math.round(monthly*m-num))} Kč`;
+    if(RATES_DATA){
+      html+=`<br><br><div style="background:#f0fdf4;padding:8px 10px;border-radius:6px;margin-top:4px"><strong style="color:#166534">Tip:</strong> U ${RATES_DATA.banks[0].name} (${bestRate}%) byste platili jen <strong>${fmt(Math.round(bestMonthly))} Kč/měs</strong> — úspora ${fmt(Math.round(monthly-bestMonthly))} Kč měsíčně!</div>`;
+    }
+    return{html:html,qr:["Jiná částka","Delší splatnost","Srovnání bank","Kontakt na poradce"]}
+  }
+  if(L.match(/otevřít.*kalkul/)){
+    document.getElementById("calculator").scrollIntoView({behavior:"smooth"});
+    return{html:"Přesunul jsem vás na kalkulačku hypotéky. Vyplňte údaje a spočítejte si splátku.",qr:[]}
+  }
+
+  // SPECIFIC PROPERTY
+  if(L.match(/bt-\d+/i)){
+    const id=L.match(/bt-\d+/i)[0].toUpperCase();const p=DB.find(x=>x.id===id);
+    if(p){chatContext.propertyId=id;return{html:`<strong>${p.title}</strong><br>${p.addr} • ${fmtPrice(p.price,p.tx)}<br><br>${p.desc.substring(0,180)}...`,qr:["Domluvit prohlídku","Cena za m²","Okolí","Kontakt"]}}
+  }
+
+  // BUDGET
+  if(L.match(/do\s*\d|mil[ió]|tisíc/)){
+    const num=parseInt((L.match(/(\d[\d\s]*)/)||["0"])[0].replace(/\s/g,""));
+    let budget=num;if(L.includes("mil"))budget*=1000000;else if(L.includes("tis"))budget*=1000;else if(budget<1000)budget*=1000000;
+    const isRent=L.includes("měs")||L.includes("pronáj")||budget<100000;
+    const m=DB.filter(p=>p.price<=budget&&(isRent?p.tx==="pronájem":p.tx==="prodej"));
+    if(m.length){chatContext.lastSearch=m;return{html:`V rozpočtu do <strong>${isRent?fmt(budget)+" Kč/měs":fmt(budget)+" Kč"}</strong> mám ${m.length} nemovitostí:${renderChatCards(m.slice(0,3))}`,qr:["Více detailů","Jiný rozpočet","Kontakt"]}}
+    return{html:"V tomto rozpočtu bohužel nemám žádnou nabídku. Chcete zkusit vyšší rozpočet?",qr:["Zvýšit rozpočet","Pronájem místo koupě","Kontakt"]}
+  }
+
+  // LOCATIONS
+  const locs=["praha","brno","ostrava","plzeň","olomouc","liberec"];
+  for(const loc of locs){if(L.includes(loc)){
+    const m=DB.filter(p=>p.loc.toLowerCase()===loc||p.addr.toLowerCase().includes(loc));
+    if(m.length){chatContext.lastSearch=m;return{html:`V <strong>${loc.charAt(0).toUpperCase()+loc.slice(1)}</strong> mám ${m.length} nemovitostí:${renderChatCards(m.slice(0,3))}`,qr:["Filtrovat cenu","Jen byty","Jen pronájem","Kontakt"]}}
+  }}
+
+  // TYPES
+  if(L.match(/byt[ůy]?(?:\s|$|\.)/)){const m=DB.filter(p=>p.type==="byt");return{html:`Mám <strong>${m.length} bytů</strong> — od ${fmtPrice(m.sort((a,b)=>a.price-b.price)[0].price,m[0].tx)}.`,qr:["Byty v Praze","Byty v Brně","Pronájem bytu","Do 8 mil."]}}
+  if(L.match(/d[oů]m[ůy]?|rodinný|vil/)){const m=DB.filter(p=>p.type==="dům");return{html:`Mám <strong>${m.length} domů</strong>. Hledáte rodinný dům, vilu, nebo řadový?`,qr:["Domy Praha","Se zahradou","S bazénem","Do 15 mil."]}}
+
+  // SERVICES
+  if(L.match(/služb|stojí|cení|kolik.*popl|provize/)){return{html:"Naše služby pro <strong>kupující jsou zdarma</strong>. Pro prodávající účtujeme provizi 2-4 % z prodejní ceny. V ceně je kompletní servis — fotografie, marketing, právní služby, AI chatbot.",qr:["Chci prodat","Chci koupit","Kontakt"]}}
+
+  // TIMELINE
+  if(L.match(/jak dlouho|doba|rychl|termín/)){return{html:"Průměrná doba prodeje: <strong>30-45 dní</strong>. Záleží na lokalitě a ceně. Naši klienti díky AI chatbotu prodají v průměru o 25 % rychleji.",qr:["Chci prodat","Kontakt na makléře"]}}
+
+  // VIRTUAL TOUR
+  if(L.match(/virtuální|3d|prohlídka|online/)){return{html:"Nabízíme <strong>3D virtuální prohlídky</strong> pro vybrané nemovitosti. Můžete si nemovitost prohlédnout z domova a ušetřit čas. Která nemovitost vás zajímá?",qr:["Byty v Praze","Domy","Zobrazit nabídku"]}}
+
+  // AMENITIES
+  if(L.match(/parkování|garář|garáž/)){const m=DB.filter(p=>p.amenities.some(a=>a.toLowerCase().includes("garáž")||a.toLowerCase().includes("parkov")));return{html:`S parkováním/garáží mám <strong>${m.length} nemovitostí</strong>:${renderChatCards(m.slice(0,3))}`,qr:["Více výsledků","Kontakt"]}}
+  if(L.match(/balkon|terasa/)){const m=DB.filter(p=>p.amenities.some(a=>a.toLowerCase().includes("balkon")||a.toLowerCase().includes("terasa")));return{html:`S balkonem/terasou: <strong>${m.length} nemovitostí</strong>:${renderChatCards(m.slice(0,3))}`,qr:["Více","Kontakt"]}}
+  if(L.match(/zahrad/)){const m=DB.filter(p=>p.amenities.some(a=>a.toLowerCase().includes("zahrad")));return{html:`Se zahradou: <strong>${m.length} nemovitostí</strong>:${renderChatCards(m.slice(0,3))}`,qr:["Více","Kontakt"]}}
+  if(L.match(/bazén|wellness/)){const m=DB.filter(p=>p.amenities.some(a=>a.toLowerCase().includes("bazén")||a.toLowerCase().includes("wellness")));if(m.length)return{html:`S bazénem/wellness:${renderChatCards(m)}`,qr:["Kontakt"]};return{html:"S bazénem mám momentálně vilu v Šáreckém údolí. Chcete se podívat?",qr:["Ano, ukažte","Ne, díky"]}}
+  if(L.match(/novostavba|nový|nová/)){const m=DB.filter(p=>p.built&&p.built>=2020);return{html:`Novostavby (od 2020): <strong>${m.length} nemovitostí</strong>:${renderChatCards(m.slice(0,3))}`,qr:["Kontakt","Více"]}}
+  if(L.match(/rekonstrukce|zrekonstruov/)){const m=DB.filter(p=>p.recon);return{html:`Po rekonstrukci: <strong>${m.length} nemovitostí</strong>:${renderChatCards(m.slice(0,3))}`,qr:["Kontakt","Více"]}}
+
+  // PROPERTY CONTEXT QUERIES
+  if(chatContext.propertyId){
+    const p=DB.find(x=>x.id===chatContext.propertyId);
+    if(p){
+      if(L.match(/okolí|vybaven|co.*poblíž|infrastruktur/)){return{html:`<strong>${p.title}</strong> — vybavení: ${p.amenities.join(", ")}. ${p.addr} je lokalita s výbornou občanskou vybaveností.`,qr:["Domluvit prohlídku","Cena za m²","Kontakt"]}}
+      if(L.match(/m[2²]|metr|plocha.*cena|cena.*m/)){return{html:`<strong>${p.title}</strong>: cena za m² je <strong>${priceM2(p)}</strong> (celková plocha ${p.size} m²).`,qr:["Porovnat s okolím","Kontakt"]}}
+      if(L.match(/fot|obráz|galeri/)){return{html:`<strong>${p.title}</strong> má ${p.imgs.length} fotografií. Klikněte na detail nemovitosti pro kompletní galerii.`,qr:["Domluvit prohlídku","Kontakt"]}}
+    }
+  }
+
+  // BROWSING
+  if(L.match(/jen se dív|jen.*kouk|just.*look|browsing/)){return{html:"Samozřejmě, prohlížejte v klidu! Když vám něco zaujme, jsem tu pro vás. Mohu vám zatím ukázat naše nejoblíbenější nabídky?",qr:["Ano, ukažte","Ne, díky","Top nabídky"]}}
+
+  // LEAD TRIGGERS
+  if(L.match(/kontakt|makl[ée]ř|zavolej|napíš|spojit|odhad|konzultac|prohlídku|ano.*chci|chci.*kontakt/)){
+    leadStage=1;return{html:"Výborně! Abych vás mohl spojit s makléřem, potřebuji pár údajů. <strong>Jak se jmenujete?</strong>",qr:[]}
+  }
+
+  // GREETINGS
+  if(L.match(/^(dobr[ýé]|ahoj|čau|zdravím|nazdar|hej|hi|hello|hey)/)){return{html:`${greeting()}! Rád vás vítám. Jak vám mohu pomoci?`,qr:["Chci koupit","Hledám pronájem","Chci prodat","Jen se dívám"]}}
+
+  // THANKS
+  if(L.match(/d[ěe]kuj|díky|thanks|děkuji/)){return{html:"Rádo se stalo! Pokud budete cokoliv potřebovat, jsem tu 24/7. Přeji hezký den!",qr:["Mám další dotaz","Kontakt na makléře"]}}
+
+  // FALLBACK
+  return{html:`Rozumím. Mohu vám pomoci s:<br>• Vyhledáním nemovitosti<br>• Informacemi o cenách<br>• Domluvením prohlídky<br>• Hypotečním poradenstvím<br>• Prodejem nemovitosti<br><br>Co vás zajímá?`,qr:["Hledám nemovitost","Ceny v Praze","Chci prodat","Hypotéka"]}
+}
+
+function searchDB(L){
+  let r=[...DB];
+  if(L.match(/byt/))r=r.filter(p=>p.type==="byt");
+  else if(L.match(/d[ůo]m|rodinný|vil/))r=r.filter(p=>p.type==="dům");
+  else if(L.match(/komerc|kancel|obchod/))r=r.filter(p=>p.type==="komerční");
+  else if(L.match(/pozem/))r=r.filter(p=>p.type==="pozemek");
+  const locs=["praha","brno","ostrava","plzeň","olomouc","liberec"];
+  for(const loc of locs){if(L.includes(loc))r=r.filter(p=>p.loc.toLowerCase()===loc||p.addr.toLowerCase().includes(loc))}
+  if(L.match(/pronáj/))r=r.filter(p=>p.tx==="pronájem");
+  else if(L.match(/koup|koupit/))r=r.filter(p=>p.tx==="prodej");
+  return r;
+}
+
+function renderChatCards(arr){
+  return arr.map(p=>`<div style="margin:5px 0;padding:7px 10px;background:#f0f7ff;border-radius:8px;cursor:pointer;font-size:.8rem" onclick="openModal('${p.id}')"><strong>${p.title}</strong><br><span style="color:#6b7280">${p.addr} • ${fmtPrice(p.price,p.tx)}</span></div>`).join("")
+}
+
+// ===== LEAD QUALIFICATION =====
+function processLead(txt){
+  switch(leadStage){
+    case 1:leadData.name=txt;leadStage=2;botMsg(`Děkuji, ${txt.split(" ")[0]}! Jaký je váš <strong>e-mail</strong>?`);break;
+    case 2:if(txt.includes("@")&&txt.includes(".")){leadData.email=txt;leadStage=3;botMsg("A <strong>telefonní číslo</strong>, pokud chcete, abychom zavolali:",["Přeskočit"])}else{botMsg("To nevypadá jako platný e-mail. Zkuste prosím znovu:")};break;
+    case 3:leadData.phone=txt.toLowerCase()==="přeskočit"?"":txt;leadStage=4;botMsg("Co vás zajímá?",["Koupě nemovitosti","Prodej nemovitosti","Pronájem","Odhad ceny"]);break;
+    case 4:leadData.interest=txt;leadStage=5;
+      botMsg(`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;margin-top:4px">
+        <strong style="color:#166534">Lead úspěšně zachycen!</strong><br>
+        <div style="margin-top:6px;font-size:.8rem"><strong>Jméno:</strong> ${leadData.name}<br><strong>E-mail:</strong> ${leadData.email}<br>${leadData.phone?`<strong>Tel:</strong> ${leadData.phone}<br>`:""}<strong>Zájem:</strong> ${leadData.interest}</div></div>
+        Děkuji! Náš makléř se ozve do <strong>24 hodin</strong>. Mezitím se mě ptejte na cokoliv.`,["Zobrazit nabídku","Mám dotaz","Děkuji"]);
+      leadStage=0;leadData={};showToast("Lead úspěšně kvalifikován!");break;
+  }
+}
+
+// ===== CONTACT FORM =====
+function validateEmail(el){
+  const msg=document.getElementById("emailMsg");
+  if(!el.value){msg.textContent="";el.classList.remove("field-error");return}
+  const valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value);
+  msg.textContent=valid?"✓ Platný e-mail":"Neplatný formát e-mailu";
+  msg.className="field-msg "+(valid?"ok":"error");
+  el.classList.toggle("field-error",!valid);
+}
+function formatPhone(el){let v=el.value.replace(/[^\d+]/g,"");if(v.startsWith("+420")&&v.length>4){v="+420 "+v.slice(4).replace(/(\d{3})/g,"$1 ").trim()}el.value=v}
+document.getElementById("contactForm").addEventListener("submit",e=>{
+  e.preventDefault();const btn=document.getElementById("contactBtn");
+  const name=document.getElementById("cName").value,email=document.getElementById("cEmail").value;
+  if(!name||!email){showToast("Vyplňte jméno a e-mail","error");return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast("Neplatný e-mail","error");return}
+  btn.classList.add("loading");btn.textContent="Odesílám...";
+  setTimeout(()=>{btn.classList.remove("loading");btn.classList.add("success");btn.textContent="Odesláno ✓";
+    showToast(`Děkujeme, ${name.split(" ")[0]}! Ozveme se do 24 hodin.`);
+    e.target.reset();document.getElementById("emailMsg").textContent="";
+    setTimeout(()=>{btn.classList.remove("success");btn.textContent="Odeslat poptávku"},3000);
+  },1500);
+});
+
+// ===== LIVE ELEMENTS =====
+function updateLiveViewers(){document.getElementById("liveViewers").textContent=40+Math.floor(Math.random()*20)}
+setInterval(updateLiveViewers,8000);
+setInterval(()=>{const ids=Object.keys(viewerCounts);const id=ids[Math.floor(Math.random()*ids.length)];viewerCounts[id]=Math.max(1,viewerCounts[id]+Math.floor(Math.random()*3)-1)},10000);
+
+// Live notifications
+const notifMessages=[
+  {name:"Martin K.",action:"si právě prohlíží",type:"byt v Praze"},
+  {name:"Lucie V.",action:"poslala poptávku na",type:"dům v Brně"},
+  {name:"Tomáš H.",action:"přidal do oblíbených",type:"byt na Vinohradech"},
+  {name:"Petra S.",action:"domluvila prohlídku",type:"domu v Černošicích"},
+  {name:"Jan M.",action:"se právě zajímá o",type:"pronájem v Karlíně"},
+  {name:"Eva R.",action:"požádala o odhad ceny",type:"bytu v Žabovřeskách"}
+];
+let notifIndex=0;
+function showLiveNotif(){
+  const n=notifMessages[notifIndex%notifMessages.length];notifIndex++;
+  const el=document.getElementById("liveNotif");
+  const p=DB[Math.floor(Math.random()*DB.length)];
+  el.innerHTML=`<img src="${p.imgs[0]}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover"><div><strong>${n.name}</strong> ${n.action} ${n.type}</div>`;
+  el.classList.add("show");setTimeout(()=>el.classList.remove("show"),4000);
+}
+setTimeout(()=>showLiveNotif(),12000);
+setInterval(()=>showLiveNotif(),25000+Math.random()*15000);
+
+// ===== KEYBOARD =====
+window.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    if(document.getElementById("propertyModal").classList.contains("active"))closeModal();
+    else if(document.getElementById("comparisonModal").classList.contains("active"))closeComparison();
+    else if(chatOpen)toggleChat();
+    else if(document.getElementById("favDrawer").classList.contains("open"))toggleFavDrawer();
+  }
+  if(document.getElementById("propertyModal").classList.contains("active")){
+    if(e.key==="ArrowLeft")navImg(-1);if(e.key==="ArrowRight")navImg(1);
+  }
+});
+
+// ===== SCROLL =====
+window.addEventListener("scroll",()=>{
+  document.getElementById("navbar").classList.toggle("scrolled",window.scrollY>50);
+  document.getElementById("backToTop").classList.toggle("show",window.scrollY>400);
+  // Active nav
+  const sections=["properties","calculator","features","testimonials","contact"];
+  let current="";sections.forEach(id=>{const el=document.getElementById(id);if(el&&el.offsetTop-200<=window.scrollY)current=id});
+  document.querySelectorAll(".nav-links a").forEach(a=>{a.classList.toggle("active",a.getAttribute("href")==="#"+current)});
+});
+
+// ===== NAV =====
+document.querySelectorAll('.nav-links a[href^="#"]').forEach(a=>{
+  a.addEventListener("click",e=>{e.preventDefault();const t=document.querySelector(a.getAttribute("href"));if(t)t.scrollIntoView({behavior:"smooth"});
+    if(window.innerWidth<=768)document.getElementById("navLinks").style.display="none"});
+});
+function toggleMobileNav(){const l=document.getElementById("navLinks");l.style.display=l.style.display==="flex"?"none":"flex";
+  if(l.style.display==="flex"){l.style.cssText="display:flex;flex-direction:column;position:absolute;top:70px;left:0;right:0;background:#fff;padding:20px;box-shadow:0 10px 15px rgba(0,0,0,.1);z-index:999"}}
+
+// ===== COUNTERS =====
+function animateCounters(){
+  const obs=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){const el=entry.target,target=parseInt(el.dataset.target),dur=2000,step=target/(dur/16);let cur=0;
+    const timer=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(timer)}el.textContent=fmt(Math.round(cur))},16);obs.unobserve(el)}})},{threshold:.5});
+  document.querySelectorAll(".stat-num[data-target]").forEach(c=>obs.observe(c));
+}
+
+// ===== COOKIE =====
+if(!localStorage.getItem("ck"))setTimeout(()=>document.getElementById("cookieBanner").classList.add("show"),2000);
+
+// ===== CHAT AUTO-HINT =====
+setTimeout(()=>{if(!chatOpen)document.getElementById("chatNotif").classList.add("show")},5000);
+
+// ===== URL PARAMS =====
+const urlP=new URLSearchParams(location.search).get("p");
+if(urlP&&DB.find(x=>x.id===urlP))setTimeout(()=>openModal(urlP),500);
+
+// ===== INIT =====
+renderProperties();animateCounters();updateFavBadge();
+
+// Load live data after initial render (non-blocking)
+setTimeout(() => loadLiveData(), 500);
+</script></body></html>
