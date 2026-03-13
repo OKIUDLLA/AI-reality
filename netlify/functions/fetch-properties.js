@@ -152,8 +152,10 @@ function toProperty(estate) {
   for (const img of imgSources.slice(0, 5)) {
     let href = img.href || "";
     if (href.startsWith("//")) href = "https:" + href;
-    // Keep query params! They contain CDN resize instructions (fl=res,400,300,...)
-    if (href && href.startsWith("http")) imgs.push(href);
+    // Route through our image proxy to avoid CDN hotlink blocking
+    if (href && href.startsWith("http")) {
+      imgs.push(`/api/img?url=${encodeURIComponent(href)}`);
+    }
   }
   if (!imgs.length) imgs.push("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600");
 
