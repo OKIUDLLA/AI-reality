@@ -365,12 +365,25 @@ function toSrealityProperty(estate) {
   // Images — full array, upgraded resolution, proxy
   const imgs = [];
   const imgSources = (estate._links || {}).images || [];
-  for (const img of imgSources.slice(0, 12)) {
+  for (const img of imgSources.slice(0, 15)) {
     let href = img.href || "";
     if (href.startsWith("//")) href = "https:" + href;
-    href = href.replace(/fl=res,\d+,\d+,/, "fl=res,800,600,");
+    // Use higher resolution for list images too (1280x960)
+    href = href.replace(/fl=res,\d+,\d+,/, "fl=res,1280,960,");
     if (href && href.startsWith("http")) {
       imgs.push(`/api/img?url=${encodeURIComponent(href)}`);
+    }
+  }
+  // Also check _links.image_middle and _links.self for additional images
+  if (imgSources.length <= 1) {
+    const mainImg = (estate._links || {}).main_image;
+    if (mainImg) {
+      let href = mainImg.href || "";
+      if (href.startsWith("//")) href = "https:" + href;
+      href = href.replace(/fl=res,\d+,\d+,/, "fl=res,1280,960,");
+      if (href && href.startsWith("http") && !imgs.some(u => u.includes(encodeURIComponent(href.split("?")[0])))) {
+        imgs.unshift(`/api/img?url=${encodeURIComponent(href)}`);
+      }
     }
   }
   if (!imgs.length) imgs.push("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600");

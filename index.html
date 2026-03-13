@@ -124,7 +124,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 .modal-overlay.active{display:flex}
 .modal-content{background:var(--white);border-radius:var(--radius);max-width:900px;width:100%;animation:modalIn .3s ease}
 @keyframes modalIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.modal-gallery{height:400px;background-size:cover;background-position:center;border-radius:var(--radius) var(--radius) 0 0;position:relative}
+.modal-gallery{height:440px;background-size:cover;background-position:center;background-color:#1a1a2e;border-radius:var(--radius) var(--radius) 0 0;position:relative;transition:background-image .3s ease}
 .modal-close{position:absolute;top:14px;right:14px;width:38px;height:38px;background:rgba(255,255,255,.9);border-radius:50%;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .modal-close:hover{background:#fff;transform:scale(1.05)}
 .gallery-nav{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s}
@@ -1169,6 +1169,7 @@ function openModal(id){
       ${p.imgs.length>1?`<button class="gallery-nav gallery-prev" onclick="event.stopPropagation();navImg(-1)"><i class="fas fa-chevron-left"></i></button>
       <button class="gallery-nav gallery-next" onclick="event.stopPropagation();navImg(1)"><i class="fas fa-chevron-right"></i></button>
       <div class="gallery-counter" id="gCount">1 / ${p.imgs.length}</div>`:""}
+      ${!p._detailLoaded ? '<div id="gallerySpinner" style="position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,.6);color:#fff;padding:4px 12px;border-radius:16px;font-size:.75rem;display:flex;align-items:center;gap:6px"><i class="fas fa-spinner fa-spin"></i> Načítám fotky...</div>' : ''}
     </div>
     <div class="modal-body">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
@@ -1258,13 +1259,37 @@ async function fetchPropertyDetail(id) {
     if (detail.roomsCount && !p.rooms) p.rooms = detail.roomsCount;
     if (detail.lat && detail.lng) p.gps = { lat: detail.lat, lng: detail.lng };
 
-    // Update images if detail has more/better ones
-    if (detail.imgs && detail.imgs.length > p.imgs.length) {
-      p.imgs = detail.imgs;
+    // Update images if detail has more or better ones
+    if (detail.imgs && detail.imgs.length > 0) {
+      // Always prefer detail images (higher resolution 1280x960)
+      if (detail.imgs.length >= p.imgs.length) {
+        p.imgs = detail.imgs;
+      }
       modalImgs = [...p.imgs];
-      // Update gallery counter
-      const gc = document.getElementById("gCount");
-      if (gc) gc.textContent = `${modalImg+1} / ${modalImgs.length}`;
+
+      // If modal is still showing, refresh gallery
+      if (modalId === id) {
+        const gallery = document.getElementById("mGallery");
+        if (gallery) {
+          // Refresh current image with better quality version
+          gallery.style.backgroundImage = `url('${modalImgs[modalImg]}')`;
+
+          // Add navigation arrows if they don't exist and we now have >1 image
+          if (modalImgs.length > 1 && !gallery.querySelector(".gallery-nav")) {
+            gallery.insertAdjacentHTML("beforeend",
+              `<button class="gallery-nav gallery-prev" onclick="event.stopPropagation();navImg(-1)"><i class="fas fa-chevron-left"></i></button>
+               <button class="gallery-nav gallery-next" onclick="event.stopPropagation();navImg(1)"><i class="fas fa-chevron-right"></i></button>
+               <div class="gallery-counter" id="gCount">${modalImg+1} / ${modalImgs.length}</div>`);
+          }
+        }
+        // Update gallery counter
+        const gc = document.getElementById("gCount");
+        if (gc) gc.textContent = `${modalImg+1} / ${modalImgs.length}`;
+
+        // Remove loading spinner from gallery if present
+        const gSpinner = document.getElementById("gallerySpinner");
+        if (gSpinner) gSpinner.remove();
+      }
     }
 
     // Build amenities from detail flags
@@ -1333,7 +1358,25 @@ async function fetchPropertyDetail(id) {
     }
   }
 }
-function navImg(dir){if(!modalImgs.length)return;modalImg=(modalImg+dir+modalImgs.length)%modalImgs.length;document.getElementById("mGallery").style.backgroundImage=`url('${modalImgs[modalImg]}')`;const c=document.getElementById("gCount");if(c)c.textContent=`${modalImg+1} / ${modalImgs.length}`}
+function navImg(dir){
+  if(!modalImgs.length)return;
+  modalImg=(modalImg+dir+modalImgs.length)%modalImgs.length;
+  const gallery=document.getElementById("mGallery");
+  if(gallery){
+    // Show loading state briefly
+    gallery.style.backgroundImage=`url('${modalImgs[modalImg]}')`;
+    // Preload next image
+    const nextIdx=(modalImg+1)%modalImgs.length;
+    if(modalImgs[nextIdx]){const pre=new Image();pre.src=modalImgs[nextIdx]}
+  }
+  const c=document.getElementById("gCount");
+  if(c)c.textContent=`${modalImg+1} / ${modalImgs.length}`;
+}
+// Touch swipe for gallery
+let touchStartX=0;
+document.addEventListener("touchstart",e=>{if(e.target.closest&&e.target.closest(".modal-gallery"))touchStartX=e.touches[0].clientX},{passive:true});
+document.addEventListener("touchend",e=>{if(!e.target.closest||!e.target.closest(".modal-gallery"))return;const dx=e.changedTouches[0].clientX-touchStartX;if(Math.abs(dx)>50){dx>0?navImg(-1):navImg(1)}},{passive:true});
+
 function closeModal(){document.getElementById("propertyModal").classList.remove("active");document.body.style.overflow=""}
 function shareProperty(id){const p=DB.find(x=>x.id===id);if(!p)return;const url=location.href.split("?")[0]+"?p="+id;if(navigator.share)navigator.share({title:p.title,text:fmtPrice(p.price,p.tx),url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("Odkaz zkopírován do schránky")}}
 
@@ -1710,7 +1753,7 @@ window.addEventListener("scroll",()=>{
   document.getElementById("navbar").classList.toggle("scrolled",window.scrollY>50);
   document.getElementById("backToTop").classList.toggle("show",window.scrollY>400);
   // Active nav
-  const sections=["properties","calculator","features","testimonials","contact"];
+  const sections=["properties","map","calculator","features","testimonials","contact"];
   let current="";sections.forEach(id=>{const el=document.getElementById(id);if(el&&el.offsetTop-200<=window.scrollY)current=id});
   document.querySelectorAll(".nav-links a").forEach(a=>{a.classList.toggle("active",a.getAttribute("href")==="#"+current)});
 });
