@@ -1,30 +1,45 @@
-// Netlify Function: Sreality.cz API proxy
-// Fetches real estate data from Sreality and transforms it for BydlímTu Reality
+// =============================================================================
+// Netlify Function: MASSIVE Sreality.cz scraper
+// Stahuje tisíce reálných inzerátů z celého českého trhu
+// Sreality.cz = 93 000+ inzerátů, pokrývá ~80% českého realitního trhu
+// =============================================================================
 
 const SREALITY_API = "https://www.sreality.cz/api/cs/v2/estates";
 
 const TYPE_MAP = { 1: "byt", 2: "dům", 3: "pozemek", 4: "komerční" };
 const TX_MAP = { 1: "prodej", 2: "pronájem" };
 const CAT_SLUG = { dům: "dum", komerční: "komercni", pozemek: "pozemek", byt: "byt" };
+const PER_PAGE = 60; // Sreality max
 
-const QUERIES = [
-  { cm: 1, ct: 1, pp: 20, page: 1, label: "Byty prodej 1" },
-  { cm: 1, ct: 1, pp: 20, page: 2, label: "Byty prodej 2" },
-  { cm: 1, ct: 2, pp: 15, page: 1, label: "Byty pronájem" },
-  { cm: 2, ct: 1, pp: 15, page: 1, label: "Domy prodej" },
-  { cm: 2, ct: 2, pp: 5, page: 1, label: "Domy pronájem" },
-  { cm: 4, ct: 2, pp: 8, page: 1, label: "Komerční pronájem" },
-  { cm: 4, ct: 1, pp: 5, page: 1, label: "Komerční prodej" },
-  { cm: 3, ct: 1, pp: 8, page: 1, label: "Pozemky" },
+// How many pages to fetch per category (60 items each)
+// Total target: ~4000-5000 listings
+const CATEGORY_PAGES = {
+  "1_1": 12, // Byty prodej: 720
+  "1_2": 8,  // Byty pronájem: 480
+  "2_1": 8,  // Domy prodej: 480
+  "2_2": 3,  // Domy pronájem: 180
+  "3_1": 5,  // Pozemky prodej: 300
+  "4_1": 4,  // Komerční prodej: 240
+  "4_2": 5,  // Komerční pronájem: 300
+};
+
+const CATEGORIES = [
+  { cm: 1, ct: 1, label: "Byty prodej" },
+  { cm: 1, ct: 2, label: "Byty pronájem" },
+  { cm: 2, ct: 1, label: "Domy prodej" },
+  { cm: 2, ct: 2, label: "Domy pronájem" },
+  { cm: 3, ct: 1, label: "Pozemky prodej" },
+  { cm: 4, ct: 1, label: "Komerční prodej" },
+  { cm: 4, ct: 2, label: "Komerční pronájem" },
 ];
 
 const CITY_MAP = {
   praha: "Praha", brno: "Brno", ostrava: "Ostrava", plzeň: "Plzeň",
   olomouc: "Olomouc", liberec: "Liberec", hradec: "Hradec Králové",
   budějovic: "České Budějovice", pardubice: "Pardubice", zlín: "Zlín",
-  kladno: "Kladno", karlovy: "Karlovy Vary", ústí: "Ústí n. L.",
+  kladno: "Kladno", "karlovy vary": "Karlovy Vary", ústí: "Ústí n. L.",
   opava: "Opava", jihlava: "Jihlava", teplice: "Teplice",
-  most: "Most", "frýdek": "Frýdek-Místek", chomutov: "Chomutov",
+  most: "Most", frýdek: "Frýdek-Místek", chomutov: "Chomutov",
   děčín: "Děčín", prostějov: "Prostějov", přerov: "Přerov",
   "mladá boleslav": "Mladá Boleslav", třebíč: "Třebíč", znojmo: "Znojmo",
   kolín: "Kolín", příbram: "Příbram", cheb: "Cheb", beroun: "Beroun",
@@ -33,7 +48,13 @@ const CITY_MAP = {
   jičín: "Jičín", kroměříž: "Kroměříž", trutnov: "Trutnov",
   vsetín: "Vsetín", hodonín: "Hodonín", břeclav: "Břeclav",
   náchod: "Náchod", chrudim: "Chrudim", blansko: "Blansko",
-  strakonice: "Strakonice", klatovy: "Klatovy",
+  strakonice: "Strakonice", klatovy: "Klatovy", tábor: "Tábor",
+  havířov: "Havířov", karviná: "Karviná", třinec: "Třinec",
+  český: "Český Krumlov", mariánské: "Mariánské Lázně",
+  sokolov: "Sokolov", louny: "Louny", litoměřice: "Litoměřice",
+  pelhřimov: "Pelhřimov", žďár: "Žďár nad Sázavou",
+  svitavy: "Svitavy", šumperk: "Šumperk", jeseník: "Jeseník",
+  vyškov: "Vyškov", uherské: "Uherské Hradiště",
 };
 
 function extractCity(locality) {
@@ -51,38 +72,62 @@ function extractCity(locality) {
     return okres.charAt(0).toUpperCase() + okres.slice(1);
   }
   const parts = locality.split(",");
-  return parts.length > 1 ? parts[parts.length - 1].trim() : parts[0].trim() || "Česko";
+  const last = parts.length > 1 ? parts[parts.length - 1].trim() : parts[0].trim();
+  return last || "Česko";
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+// ===== PARALLEL BATCH FETCHER =====
+async function fetchPage(cm, ct, page) {
+  const url = `${SREALITY_API}?category_main_cb=${cm}&category_type_cb=${ct}&per_page=${PER_PAGE}&page=${page}`;
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    const estates = (data._embedded || {}).estates || [];
+    estates.forEach((e) => {
+      e._cat = TYPE_MAP[cm];
+      e._tx = TX_MAP[ct];
+    });
+    return estates;
+  } catch (err) {
+    return [];
+  }
 }
 
-async function fetchEstates() {
-  const allEstates = [];
-
-  for (const q of QUERIES) {
-    try {
-      const url = `${SREALITY_API}?category_main_cb=${q.cm}&category_type_cb=${q.ct}&per_page=${q.pp}&page=${q.page}`;
-      const resp = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; BydlimTuBot/1.0)",
-          Accept: "application/json",
-        },
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        const estates = (data._embedded || {}).estates || [];
-        estates.forEach((e) => {
-          e._cat = TYPE_MAP[q.cm];
-          e._tx = TX_MAP[q.ct];
-        });
-        allEstates.push(...estates);
-      }
-    } catch (err) {
-      console.error(`[${q.label}] Error:`, err.message);
+async function fetchAllEstates() {
+  // Build all page requests
+  const requests = [];
+  for (const cat of CATEGORIES) {
+    const key = `${cat.cm}_${cat.ct}`;
+    const maxPages = CATEGORY_PAGES[key] || 3;
+    for (let page = 1; page <= maxPages; page++) {
+      requests.push({ cm: cat.cm, ct: cat.ct, page, label: cat.label });
     }
-    await sleep(300);
+  }
+
+  console.log(`[BydlímTu] Fetching ${requests.length} pages from Sreality.cz...`);
+
+  // Fetch in parallel batches of 6
+  const BATCH_SIZE = 6;
+  const allEstates = [];
+  for (let i = 0; i < requests.length; i += BATCH_SIZE) {
+    const batch = requests.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map((r) => fetchPage(r.cm, r.ct, r.page))
+    );
+    for (const estates of results) {
+      allEstates.push(...estates);
+    }
+    // Small delay between batches to be respectful
+    if (i + BATCH_SIZE < requests.length) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
   }
 
   // Deduplicate
@@ -94,204 +139,168 @@ async function fetchEstates() {
   });
 }
 
-async function fetchDetails(estates, maxDetails = 20) {
-  const details = {};
-  const toFetch = estates.slice(0, maxDetails);
-
-  for (const e of toFetch) {
-    try {
-      const resp = await fetch(`${SREALITY_API}/${e.hash_id}`, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; BydlimTuBot/1.0)",
-          Accept: "application/json",
-        },
-      });
-      if (resp.ok) {
-        details[e.hash_id] = await resp.json();
-      }
-    } catch (err) {
-      // skip
-    }
-    await sleep(250);
-  }
-  return details;
-}
-
-function extractDetail(detail) {
-  const r = { size: 0, bath: 0, floor: null, floors: null, energy: null, built: null, recon: null, desc: "", amenities: [] };
-  if (!detail || !detail.items) return r;
-
-  for (const item of detail.items) {
-    const name = (item.name || "").toLowerCase();
-    const val = item.value;
-
-    if ((name.includes("celková") || name.includes("užitná")) && name.includes("plocha")) {
-      try { r.size = parseInt(parseFloat(String(val).replace(",", ".").replace(" ", ""))); } catch (e) {}
-    } else if (name.includes("plocha") && !r.size) {
-      try { r.size = parseInt(parseFloat(String(val).replace(",", ".").replace(" ", ""))); } catch (e) {}
-    }
-    if (name.includes("podlaží") && !name.includes("celkem") && !name.includes("počet")) {
-      try { r.floor = parseInt(val); } catch (e) {}
-    }
-    if ((name.includes("celkem") || name.includes("počet")) && name.includes("podlaží")) {
-      try { r.floors = parseInt(val); } catch (e) {}
-    }
-    if (name.includes("energetická") && val) r.energy = String(val).trim().toUpperCase().charAt(0);
-    if (name.includes("rok") && (name.includes("kolaud") || name.includes("výstavb"))) {
-      try { r.built = parseInt(val); } catch (e) {}
-    }
-    if (name.includes("rekonstrukce") && val) { try { r.recon = parseInt(val); } catch (e) {} }
-    if (name.includes("koupeln")) { try { r.bath = parseInt(val); } catch (e) { r.bath = 1; } }
-    if (item.type === "set" && Array.isArray(val)) {
-      for (const v of val) {
-        if (typeof v === "object" && v.value) r.amenities.push(v.value);
-        else if (typeof v === "string") r.amenities.push(v);
-      }
-    }
-  }
-
-  const text = detail.text;
-  if (text && typeof text === "object" && text.value) {
-    r.desc = text.value.replace(/<[^>]+>/g, "").substring(0, 400).replace(/\r?\n/g, " ").trim();
-  } else if (detail.meta_description) {
-    r.desc = detail.meta_description.substring(0, 400);
-  }
-  return r;
-}
-
-function toProperty(estate, detail, idx) {
+// ===== TRANSFORM =====
+function toProperty(estate) {
   const hid = estate.hash_id;
   const cat = estate._cat;
   const tx = estate._tx;
   const slug = CAT_SLUG[cat] || cat;
-  const d = detail ? extractDetail(detail) : { size: 0, bath: 0, floor: null, floors: null, energy: null, built: null, recon: null, desc: "", amenities: [] };
 
   const imgs = [];
-  for (const img of ((estate._links || {}).images || []).slice(0, 5)) {
+  for (const img of ((estate._links || {}).images || []).slice(0, 3)) {
     let href = img.href || "";
     if (href.startsWith("//")) href = "https:" + href;
-    // Remove query params
-    href = href.split("?")[0];
+    href = href.split("?")[0]; // strip query params
     if (href) imgs.push(href);
   }
   if (!imgs.length) imgs.push("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600");
 
   const name = estate.name || "Nemovitost";
   const locality = estate.locality || "";
-  let size = d.size || 0;
-  if (!size) {
-    const m = name.match(/(\d+)\s*m[²2]/);
-    if (m) size = parseInt(m[1]);
-  }
-  const rm = name.match(/(\d)\+/);
-  const rooms = rm ? parseInt(rm[1]) : 0;
-  const daysAgo = Math.floor(Math.random() * 22);
-  const badges = estate.new || daysAgo <= 2 ? ["new"] : [];
 
-  let amenities = d.amenities.filter((a) => a && a.length < 40).slice(0, 8);
-  if (!amenities.length && estate.labels) amenities = estate.labels.filter((l) => l.length < 40).slice(0, 5);
+  // Extract size from name
+  let size = 0;
+  const sizeMatch = name.match(/(\d+)\s*m[²2]/);
+  if (sizeMatch) size = parseInt(sizeMatch[1]);
+
+  // Extract rooms
+  const rmMatch = name.match(/(\d)\+/);
+  const rooms = rmMatch ? parseInt(rmMatch[1]) : 0;
+
+  // Labels as amenities
+  let amenities = [];
+  if (estate.labelsAll && Array.isArray(estate.labelsAll)) {
+    amenities = estate.labelsAll.filter((l) => typeof l === "string" && l.length < 40).slice(0, 6);
+  }
+  if (!amenities.length && estate.labels && Array.isArray(estate.labels)) {
+    amenities = estate.labels.filter((l) => typeof l === "string" && l.length < 40).slice(0, 6);
+  }
   if (!amenities.length) amenities = ["Kontaktujte nás"];
+
+  const daysAgo = Math.floor(Math.random() * 28);
 
   return {
     id: `SR-${hid}`,
     type: cat,
-    tx: tx,
+    tx,
     title: name,
     loc: extractCity(locality),
-    addr: locality || "",
+    addr: locality,
     price: estate.price || 1,
     size,
     rooms,
-    bath: d.bath || (rooms > 0 ? 1 : 0),
-    floor: d.floor,
-    floors: d.floors,
+    bath: rooms > 0 ? 1 : 0,
+    floor: null,
+    floors: null,
     imgs,
-    badges,
-    desc: d.desc || `${name}. ${locality}.`,
+    badges: estate.new ? ["new"] : daysAgo <= 2 ? ["new"] : [],
+    desc: `${name}. ${locality}.`,
     amenities,
-    energy: d.energy,
+    energy: null,
     avail: "Ihned",
-    built: d.built,
-    recon: d.recon,
+    built: null,
+    recon: null,
     added: daysAgo,
     source: "sreality.cz",
     sourceUrl: `https://www.sreality.cz/detail/${tx}/${slug}/${hid}`,
   };
 }
 
-// In-memory cache (persists across warm Lambda invocations, ~5-15 min)
-let cachedData = null;
+// ===== CACHE =====
+let cachedResult = null;
 let cachedAt = 0;
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL = 45 * 60 * 1000; // 45 min
 
+// ===== HANDLER =====
 export async function handler(event) {
   const now = Date.now();
+  const params = event.queryStringParameters || {};
 
-  // Return cached if fresh
-  if (cachedData && now - cachedAt < CACHE_TTL) {
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=1800, stale-while-revalidate=3600",
-        "Access-Control-Allow-Origin": "*",
-        "X-Cache": "HIT",
-        "X-Cache-Age": String(Math.round((now - cachedAt) / 1000)),
-      },
-      body: cachedData,
-    };
-  }
+  // === SERVER-SIDE FILTERING ===
+  // Podporované query params: type, tx, city, priceMin, priceMax, sizeMin, rooms, page, limit
+  const filterType = params.type || null;       // byt, dům, pozemek, komerční
+  const filterTx = params.tx || null;           // prodej, pronájem
+  const filterCity = params.city || null;
+  const priceMin = params.priceMin ? parseInt(params.priceMin) : null;
+  const priceMax = params.priceMax ? parseInt(params.priceMax) : null;
+  const sizeMin = params.sizeMin ? parseInt(params.sizeMin) : null;
+  const filterRooms = params.rooms ? parseInt(params.rooms) : null;
+  const page = Math.max(1, parseInt(params.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(params.limit) || 60));
 
-  try {
-    console.log("[BydlímTu] Fetching fresh data from Sreality.cz...");
-    const estates = await fetchEstates();
-    console.log(`[BydlímTu] Fetched ${estates.length} estates`);
-
-    // Fetch details for first 20
-    const details = await fetchDetails(estates, 20);
-    console.log(`[BydlímTu] Fetched ${Object.keys(details).length} details`);
-
-    const properties = estates.map((e, i) => toProperty(e, details[e.hash_id] || null, i));
-
-    const result = {
-      updated: new Date().toISOString(),
-      source: "sreality.cz",
-      count: properties.length,
-      properties,
-    };
-
-    const body = JSON.stringify(result);
-    cachedData = body;
-    cachedAt = now;
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=1800, stale-while-revalidate=3600",
-        "Access-Control-Allow-Origin": "*",
-        "X-Cache": "MISS",
-      },
-      body,
-    };
-  } catch (error) {
-    console.error("[BydlímTu] Error:", error);
-    // If we have stale cache, return it
-    if (cachedData) {
-      return {
-        statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "X-Cache": "STALE",
-        },
-        body: cachedData,
-      };
+  // Check cache
+  let allProperties;
+  if (cachedResult && now - cachedAt < CACHE_TTL) {
+    allProperties = cachedResult;
+    console.log(`[BydlímTu] Cache HIT: ${allProperties.length} properties`);
+  } else {
+    try {
+      console.log("[BydlímTu] Cache MISS, fetching from Sreality.cz...");
+      const estates = await fetchAllEstates();
+      console.log(`[BydlímTu] Fetched ${estates.length} raw estates`);
+      allProperties = estates.map(toProperty);
+      cachedResult = allProperties;
+      cachedAt = now;
+      console.log(`[BydlímTu] Transformed ${allProperties.length} properties`);
+    } catch (error) {
+      console.error("[BydlímTu] Fetch error:", error);
+      if (cachedResult) {
+        allProperties = cachedResult;
+      } else {
+        return {
+          statusCode: 502,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify({ error: "Sreality.cz temporarily unavailable" }),
+        };
+      }
     }
-    return {
-      statusCode: 502,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Failed to fetch properties", message: error.message }),
-    };
   }
+
+  // Apply filters
+  let filtered = allProperties;
+  if (filterType) filtered = filtered.filter((p) => p.type === filterType);
+  if (filterTx) filtered = filtered.filter((p) => p.tx === filterTx);
+  if (filterCity) filtered = filtered.filter((p) => p.loc.toLowerCase().includes(filterCity.toLowerCase()));
+  if (priceMin) filtered = filtered.filter((p) => p.price >= priceMin);
+  if (priceMax) filtered = filtered.filter((p) => p.price <= priceMax);
+  if (sizeMin) filtered = filtered.filter((p) => p.size >= sizeMin);
+  if (filterRooms) filtered = filtered.filter((p) => p.rooms >= filterRooms);
+
+  // Paginate
+  const totalFiltered = filtered.length;
+  const totalPages = Math.ceil(totalFiltered / limit);
+  const offset = (page - 1) * limit;
+  const pageItems = filtered.slice(offset, offset + limit);
+
+  // Category stats
+  const stats = {};
+  for (const p of allProperties) {
+    const key = `${p.type}_${p.tx}`;
+    stats[key] = (stats[key] || 0) + 1;
+  }
+
+  const result = {
+    updated: new Date(cachedAt || now).toISOString(),
+    source: "sreality.cz",
+    totalAll: allProperties.length,
+    totalFiltered,
+    totalPages,
+    page,
+    limit,
+    count: pageItems.length,
+    stats,
+    properties: pageItems,
+  };
+
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=900, stale-while-revalidate=3600",
+      "Access-Control-Allow-Origin": "*",
+      "X-Total": String(allProperties.length),
+      "X-Cache": cachedResult && now - cachedAt < CACHE_TTL ? "HIT" : "MISS",
+    },
+    body: JSON.stringify(result),
+  };
 }

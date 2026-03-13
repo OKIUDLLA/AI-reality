@@ -625,10 +625,14 @@ DB = [...FALLBACK_DB];
 
 // ===== LIVE DATA LOADER =====
 // Smart data loader: tries Netlify Functions API first, then static JSON, then fallback DB
+let TOTAL_ON_SERVER = 0;  // Total properties available on Sreality
+let API_AVAILABLE = false; // Whether Netlify API is available
+let CURRENT_API_PAGE = 1;
+
 async function tryFetch(urls) {
   for (const url of urls) {
     try {
-      const resp = await fetch(url, {signal: AbortSignal.timeout(15000)});
+      const resp = await fetch(url, {signal: AbortSignal.timeout(20000)});
       if (resp.ok) return await resp.json();
     } catch(e) { /* try next */ }
   }
@@ -638,16 +642,19 @@ async function tryFetch(urls) {
 async function loadLiveData() {
   console.log("[BydlímTu] Načítám živá data...");
 
-  // Load properties — try API first, then static file
+  // Load properties — try API first (paginates 60 at a time), then static file
   try {
     const propData = await tryFetch([
-      "/api/properties",
+      "/api/properties?limit=60&page=1",
       "data/properties.json?t=" + Date.now()
     ]);
     if (propData && propData.properties && propData.properties.length > 0) {
       DB = propData.properties;
       DATA_LOADED = true;
-      console.log(`[BydlímTu] Načteno ${DB.length} nemovitostí ze Sreality.cz (aktualizace: ${propData.updated})`);
+      TOTAL_ON_SERVER = propData.totalAll || propData.count || DB.length;
+      API_AVAILABLE = !!propData.totalAll;
+      CURRENT_API_PAGE = 1;
+      console.log(`[BydlímTu] Načteno ${DB.length} nemovitostí (celkem na serveru: ${TOTAL_ON_SERVER})`);
 
       // Update viewer counts for new IDs
       DB.forEach(p => {
@@ -656,17 +663,22 @@ async function loadLiveData() {
 
       // Update stats
       const countEl = document.querySelector('[data-target="1247"]');
-      if (countEl) countEl.dataset.target = DB.length;
+      if (countEl) countEl.dataset.target = TOTAL_ON_SERVER;
 
       // Show live badge
-      showDataSourceBadge(propData.updated, DB.length);
+      showDataSourceBadge(propData.updated, TOTAL_ON_SERVER);
 
       // Update subtitle
       const sub = document.getElementById("propertiesSubtitle");
-      if(sub) sub.textContent = `${DB.length} reálných nemovitostí z portálu Sreality.cz — aktualizováno průběžně`;
+      if(sub) sub.textContent = `${TOTAL_ON_SERVER.toLocaleString("cs-CZ")} reálných nemovitostí z portálu Sreality.cz — aktualizováno průběžně`;
 
       // Show freshness indicator
       updateFreshnessBar(propData.updated, propData.source);
+
+      // Lazy-load more pages in background to fill the DB
+      if (API_AVAILABLE && propData.totalPages > 1) {
+        loadMorePagesInBackground(Math.min(propData.totalPages, 50));
+      }
 
       // Re-render
       renderProperties(true);
@@ -697,6 +709,35 @@ async function loadLiveData() {
   } catch (e) {
     console.log("[BydlímTu] Živé sazby nedostupné, používám výchozí hodnoty.", e);
   }
+}
+
+// Progressively load more pages from API in background
+async function loadMorePagesInBackground(maxPage) {
+  const seenIds = new Set(DB.map(p => p.id));
+  for (let pg = 2; pg <= maxPage; pg++) {
+    try {
+      const resp = await fetch(`/api/properties?limit=60&page=${pg}`, {signal: AbortSignal.timeout(20000)});
+      if (!resp.ok) break;
+      const data = await resp.json();
+      if (!data.properties || data.properties.length === 0) break;
+      let added = 0;
+      for (const p of data.properties) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          DB.push(p);
+          if (!viewerCounts[p.id]) viewerCounts[p.id] = Math.floor(Math.random() * 8) + 1;
+          added++;
+        }
+      }
+      CURRENT_API_PAGE = pg;
+      console.log(`[BydlímTu] Background page ${pg}: +${added} (celkem: ${DB.length})`);
+      // Refresh count display
+      document.getElementById("propertiesCount").textContent = `Zobrazeno ${Math.min(displayCount, getFiltered().length)} z ${getFiltered().length} nemovitostí`;
+    } catch(e) { break; }
+    // 500ms between pages to be gentle
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.log(`[BydlímTu] Background loading done. Total: ${DB.length} nemovitostí`);
 }
 
 function showDataSourceBadge(updated, count) {
@@ -763,7 +804,7 @@ setInterval(() => loadLiveData(), 60 * 60 * 1000);
 let favorites = new Set();
 let currentFilter = "all";
 let currentSort = "newest";
-let displayCount = 6;
+let displayCount = 12;
 let chatOpen = false;
 let chatInited = false;
 let chatContext = {};
@@ -810,7 +851,7 @@ function getFiltered(){
 
 // ===== RENDER =====
 function renderProperties(reset){
-  if(reset)displayCount=6;
+  if(reset)displayCount=12;
   const filtered=getFiltered();
   const show=filtered.slice(0,displayCount);
   document.getElementById("propertiesCount").textContent=`Zobrazeno ${show.length} z ${filtered.length} nemovitostí`;
@@ -820,8 +861,8 @@ function renderProperties(reset){
     document.getElementById("loadMoreWrap").style.display="none";return;
   }
   grid.innerHTML=show.map((p,i)=>`
-    <div class="property-card" onclick="openModal('${p.id}')" style="animation-delay:${i*60}ms;transform:translateY(10px)" role="article" aria-label="${p.title}">
-      <div class="property-img" style="background-image:url('${p.imgs[0]}')" role="img" aria-label="Foto ${p.title}">
+    <div class="property-card" onclick="openModal('${p.id}')" style="animation-delay:${Math.min(i,8)*60}ms;transform:translateY(10px)" role="article" aria-label="${p.title}">
+      <div class="property-img" data-bg="${p.imgs[0]}" style="${i<6?`background-image:url('${p.imgs[0]}')`:''}" role="img" aria-label="Foto ${p.title}">
         <div class="badges">${p.badges.map(b=>b==="new"?'<span class="badge badge-new">Novinka</span>':b==="hot"?'<span class="badge badge-hot">Top</span>':'<span class="badge badge-price">Akce</span>').join("")}</div>
         <button class="fav-btn ${favorites.has(p.id)?"active":""}" onclick="event.stopPropagation();toggleFav('${p.id}')" aria-label="Oblíbené"><i class="fa${favorites.has(p.id)?"s":"r"} fa-heart"></i></button>
         <div class="img-count"><i class="fas fa-camera"></i> ${p.imgs.length}</div>
@@ -845,8 +886,30 @@ function renderProperties(reset){
       </div>
     </div>`).join("");
   document.getElementById("loadMoreWrap").style.display=displayCount>=filtered.length?"none":"block";
+  // Lazy load images after render
+  requestAnimationFrame(()=>lazyLoadImages());
 }
-function loadMore(){displayCount+=6;renderProperties()}
+function loadMore(){displayCount+=12;renderProperties();lazyLoadImages()}
+
+// Lazy load images using IntersectionObserver
+const imgObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const bg = el.dataset.bg;
+      if (bg && !el.style.backgroundImage.includes('http')) {
+        el.style.backgroundImage = `url('${bg}')`;
+      }
+      imgObserver.unobserve(el);
+    }
+  });
+}, {rootMargin: '200px'});
+
+function lazyLoadImages() {
+  document.querySelectorAll('.property-img[data-bg]').forEach(el => {
+    if (!el.style.backgroundImage.includes('http')) imgObserver.observe(el);
+  });
+}
 
 // ===== FILTERS =====
 document.getElementById("filterTabs").addEventListener("click",e=>{
