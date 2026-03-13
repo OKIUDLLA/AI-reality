@@ -2,11 +2,11 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="no-referrer-when-downgrade">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="BydlímTu Reality — AI asistent pro nemovitosti v ČR. Byty, domy, komerční prostory 24/7.">
 <meta property="og:title" content="BydlímTu Reality — AI asistent pro nemovitosti">
-<meta property="og:description" content="Najděte vysněný domov s AI asistentem. 1247+ nemovitostí v celé ČR.">
+<meta property="og:description" content="Najděte vysněný domov s AI asistentem. 2600+ reálných nemovitostí z celého českého trhu.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='0' y='28' font-size='32'>🏠</text></svg>">
 <title>BydlímTu Reality — Váš AI asistent pro nemovitosti</title>
@@ -662,9 +662,12 @@ async function loadLiveData() {
         if (!viewerCounts[p.id]) viewerCounts[p.id] = Math.floor(Math.random() * 8) + 1;
       });
 
-      // Update stats
+      // Update stats counter with real count
       const countEl = document.querySelector('[data-target="1247"]');
-      if (countEl) countEl.dataset.target = TOTAL_ON_SERVER;
+      if (countEl) { countEl.dataset.target = TOTAL_ON_SERVER; countEl.textContent = fmt(TOTAL_ON_SERVER); }
+      // Update hero stat text too
+      const heroStat = document.querySelector('.hero-stat .num');
+      if (heroStat && heroStat.textContent.includes('1')) heroStat.textContent = fmt(TOTAL_ON_SERVER);
 
       // Show live badge
       showDataSourceBadge(propData.updated, TOTAL_ON_SERVER);
@@ -788,7 +791,7 @@ function updateFreshnessBar(updated, source) {
     label = `${DB.length} nemovitostí · Poslední aktualizace: ${timeStr} (před ${hours}h) — doporučujeme obnovit`;
   } else {
     freshness = "error";
-    label = `Data mohou být zastaralá (${timeStr}). Spusťte python3 update.py pro aktualizaci.`;
+    label = `Data mohou být zastaralá (${timeStr}). Zkuste obnovit stránku.`;
   }
 
   bar.style.display = "flex";
@@ -1171,8 +1174,8 @@ function respond(input){
   }
 
   // SPECIFIC PROPERTY
-  if(L.match(/bt-\d+/i)){
-    const id=L.match(/bt-\d+/i)[0].toUpperCase();const p=DB.find(x=>x.id===id);
+  if(L.match(/(?:bt|sr)-\d+/i)){
+    const id=L.match(/(?:bt|sr)-\d+/i)[0].toUpperCase();const p=DB.find(x=>x.id===id);
     if(p){chatContext.propertyId=id;return{html:`<strong>${p.title}</strong><br>${p.addr} • ${fmtPrice(p.price,p.tx)}<br><br>${p.desc.substring(0,180)}...`,qr:["Domluvit prohlídku","Cena za m²","Okolí","Kontakt"]}}
   }
 
