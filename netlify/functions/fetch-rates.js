@@ -83,8 +83,22 @@ let cachedRates = null;
 let cachedAt = 0;
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours (rates don't change often)
 
+// Rate limiter
+const rlMap = new Map();
+function rl(ip) {
+  const now = Date.now();
+  const e = rlMap.get(ip);
+  if (!e || now - e.s > 60000) { rlMap.set(ip, { s: now, c: 1 }); return true; }
+  e.c++;
+  return e.c <= 20;
+}
+
 export async function handler(event) {
   const now = Date.now();
+  const ip = (event.headers || {})["x-forwarded-for"] || "?";
+  if (!rl(ip)) {
+    return { statusCode: 429, headers: { "Content-Type": "text/plain", "Retry-After": "60" }, body: "Too many requests" };
+  }
 
   if (cachedRates && now - cachedAt < CACHE_TTL) {
     return {

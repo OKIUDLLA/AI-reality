@@ -734,27 +734,66 @@ const CACHE_TTL = 45 * 60 * 1000;
 const detailCache = new Map();
 const DETAIL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
+// ===== RATE LIMITER =====
+const requestLog = new Map();
+const RL_LIMIT = 30; // requests per IP per minute
+const RL_WINDOW = 60000;
+
+function rateLimit(ip) {
+  const now = Date.now();
+  const entry = requestLog.get(ip);
+  if (!entry || now - entry.start > RL_WINDOW) {
+    requestLog.set(ip, { start: now, count: 1 });
+    // Cleanup old entries periodically
+    if (requestLog.size > 1000) {
+      for (const [k, v] of requestLog) {
+        if (now - v.start > RL_WINDOW) requestLog.delete(k);
+      }
+    }
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RL_LIMIT;
+}
+
+// ===== INPUT SANITIZATION =====
+function sanitizeParam(val, maxLen = 100) {
+  if (!val) return null;
+  // Strip anything that isn't alphanumeric, space, dash, dot, comma, Czech chars
+  return String(val).slice(0, maxLen).replace(/[<>"'`;(){}]/g, "").trim() || null;
+}
+
 // ===== MAIN HANDLER =====
 export async function handler(event) {
   const now = Date.now();
   const params = event.queryStringParameters || {};
 
+  // Rate limiting
+  const clientIp = (event.headers || {})["x-forwarded-for"] || "unknown";
+  if (!rateLimit(clientIp)) {
+    return jsonResponse({ error: "Too many requests", retryAfter: 60 }, 429);
+  }
+
   // === ON-DEMAND DETAIL FETCH ===
   // If ?detail=SR-12345 is passed, fetch full detail for that property
   if (params.detail) {
-    return await handleDetailRequest(params.detail);
+    const detailId = sanitizeParam(params.detail, 50);
+    if (!detailId || !/^(SR|BR|BT)-[\w]+$/.test(detailId)) {
+      return jsonResponse({ error: "Invalid detail ID format" }, 400);
+    }
+    return await handleDetailRequest(detailId);
   }
 
-  // === SERVER-SIDE FILTERING ===
-  const filterType = params.type || null;
-  const filterTx = params.tx || null;
-  const filterCity = params.city || null;
-  const priceMin = params.priceMin ? parseInt(params.priceMin) : null;
-  const priceMax = params.priceMax ? parseInt(params.priceMax) : null;
-  const sizeMin = params.sizeMin ? parseInt(params.sizeMin) : null;
-  const filterRooms = params.rooms ? parseInt(params.rooms) : null;
-  const filterSource = params.source || null; // "sreality", "bezrealitky"
-  const page = Math.max(1, parseInt(params.page) || 1);
+  // === SERVER-SIDE FILTERING (sanitized inputs) ===
+  const filterType = sanitizeParam(params.type, 20);
+  const filterTx = sanitizeParam(params.tx, 20);
+  const filterCity = sanitizeParam(params.city, 50);
+  const priceMin = params.priceMin ? Math.max(0, parseInt(params.priceMin) || 0) : null;
+  const priceMax = params.priceMax ? Math.min(999999999, parseInt(params.priceMax) || 0) : null;
+  const sizeMin = params.sizeMin ? Math.max(0, parseInt(params.sizeMin) || 0) : null;
+  const filterRooms = params.rooms ? Math.min(99, Math.max(0, parseInt(params.rooms) || 0)) : null;
+  const filterSource = sanitizeParam(params.source, 30);
+  const page = Math.max(1, Math.min(999, parseInt(params.page) || 1));
   const limit = Math.min(100, Math.max(1, parseInt(params.limit) || 60));
 
   // Check cache

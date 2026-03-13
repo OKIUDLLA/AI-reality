@@ -23,10 +23,13 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"RealEstateAgent","name":"BydlímTu Reality","description":"AI asistent pro vyhledávání nemovitostí v ČR. Tisíce reálných nabídek ze Sreality.cz a Bezrealitky.cz.","url":"https://bydlimtu.netlify.app","areaServed":{"@type":"Country","name":"CZ"},"knowsLanguage":"cs","contactPoint":{"@type":"ContactPoint","telephone":"+420-123-456-789","contactType":"customer service","availableLanguage":"cs"}}
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<meta name="theme-color" content="#1a56db">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--primary:#1a56db;--primary-dark:#1244b0;--primary-light:#e8effc;--accent:#f59e0b;--success:#10b981;--danger:#ef4444;--text:#1f2937;--text-light:#6b7280;--text-lighter:#9ca3af;--bg:#f9fafb;--white:#fff;--border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);--shadow-xl:0 20px 25px -5px rgba(0,0,0,.1);--radius:12px;--radius-sm:8px}
@@ -370,6 +373,26 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 .form-row{grid-template-columns:1fr}.fav-drawer{width:100%}
 .calc-grid{gap:24px}.live-notification{max-width:calc(100vw - 48px)}
 }
+
+/* ACCESSIBILITY — focus visible */
+*:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:4px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+
+/* REDUCED MOTION — respect user preference */
+@media(prefers-reduced-motion:reduce){
+*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+.property-card{animation:none!important;opacity:1!important;transform:none!important}
+.chatbot-trigger{animation:none!important}
+.typing-indicator span{animation:none!important}
+.skeleton-card .sk-img,.skeleton-card .sk-line{animation:none!important}
+.live-dot{animation:none!important}
+}
+
+/* HIGH CONTRAST — improve readability */
+@media(prefers-contrast:high){
+:root{--border:#999;--text-light:#333;--text-lighter:#555;--shadow:0 1px 3px rgba(0,0,0,.3)}
+.badge{border:1px solid currentColor}
+}
 </style>
 </head>
 <body>
@@ -427,7 +450,8 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 </section>
 
 <!-- PROPERTIES -->
-<section class="properties-section" id="properties" role="main">
+<main id="main">
+<section class="properties-section" id="properties">
 <div class="container">
 <div id="dataFreshness" class="data-freshness" style="display:none">
 <span class="live-dot" style="width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
@@ -448,7 +472,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <select class="sort-select" id="sortSelect"><option value="newest">Nejnovější</option><option value="price-asc">Cena ↑</option><option value="price-desc">Cena ↓</option><option value="size-desc">Plocha ↓</option></select>
 </div>
 </div>
-<div class="properties-count" id="propertiesCount"></div>
+<div class="properties-count" id="propertiesCount" aria-live="polite" role="status"></div>
 <div class="properties-grid" id="propertiesGrid"></div>
 <div class="load-more-wrap" id="loadMoreWrap"><button class="load-more" onclick="loadMore()">Načíst další nemovitosti</button></div>
 </div>
@@ -561,6 +585,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 </div>
 </div></div>
 </section>
+</main>
 
 <!-- FOOTER -->
 <footer class="footer">
@@ -594,7 +619,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <div class="chat-header-info"><h4>AI Asistent BydlímTu</h4><span><span class="online-dot"></span> Online — odpovídá okamžitě</span></div>
 <button onclick="toggleChat()" aria-label="Zavřít chat"><i class="fas fa-times"></i></button>
 </div>
-<div class="chat-messages" id="chatMessages"></div>
+<div class="chat-messages" id="chatMessages" aria-live="polite" role="log" aria-label="Chat historie"></div>
 <div class="chat-input-area">
 <input type="text" class="chat-input" id="chatInput" placeholder="Napište zprávu..." aria-label="Zpráva pro chatbot">
 <button class="chat-send" id="chatSendBtn" onclick="sendChat()" aria-label="Odeslat"><i class="fas fa-paper-plane"></i></button>
@@ -628,7 +653,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <div class="live-notification" id="liveNotif"></div>
 
 <!-- TOAST -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer" aria-live="assertive" role="alert"></div>
 <script>
 
 // ===== DATA LOADING =====
@@ -1243,7 +1268,7 @@ function openModal(id){
   if (!p._detailLoaded) fetchPropertyDetail(id);
 }
 
-function escHtml(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function escHtml(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
 
 function renderModalFeatures(p) {
   const feats = [];
@@ -1494,8 +1519,11 @@ function hideTyping(){const el=document.getElementById("typingMsg");if(el)el.rem
 
 function sendChat(){
   const inp=document.getElementById("chatInput"),txt=inp.value.trim();
-  if(!txt)return;inp.value="";
-  addMsg("user",txt.replace(/</g,"&lt;").replace(/>/g,"&gt;"));
+  if(!txt)return;
+  // Input length limit (prevent abuse)
+  if(txt.length>500){showToast("Zpráva je příliš dlouhá (max 500 znaků)","error");return}
+  inp.value="";
+  addMsg("user",escHtml(txt));
   showTyping();
   const delay=600+Math.random()*800;
   if(leadStage>0){setTimeout(()=>{hideTyping();processLead(txt)},delay);return}
@@ -1727,9 +1755,24 @@ function validateEmail(el){
 function formatPhone(el){let v=el.value.replace(/[^\d+]/g,"");if(v.startsWith("+420")&&v.length>4){v="+420 "+v.slice(4).replace(/(\d{3})/g,"$1 ").trim()}el.value=v}
 document.getElementById("contactForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=document.getElementById("contactBtn");
-  const name=document.getElementById("cName").value,email=document.getElementById("cEmail").value;
+  const name=document.getElementById("cName").value.trim();
+  const email=document.getElementById("cEmail").value.trim();
+  const phone=document.getElementById("cPhone")?document.getElementById("cPhone").value.trim():"";
+  // Validate required fields
   if(!name||!email){showToast("Vyplňte jméno a e-mail","error");return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast("Neplatný e-mail","error");return}
+  // Validate name (2-100 chars, no HTML)
+  if(name.length<2||name.length>100){showToast("Jméno musí mít 2-100 znaků","error");return}
+  if(/<|>/.test(name)){showToast("Jméno obsahuje nepovolené znaky","error");return}
+  // Validate email
+  if(!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email)){showToast("Neplatný e-mail","error");return}
+  if(email.length>254){showToast("E-mail je příliš dlouhý","error");return}
+  // Validate phone (optional, Czech format)
+  if(phone&&!/^(\+?\d[\d\s\-]{6,17})$/.test(phone)){showToast("Neplatné telefonní číslo","error");return}
+  // Rate limit — max 3 submissions per minute
+  const now=Date.now();if(!window._formSubmits)window._formSubmits=[];
+  window._formSubmits=window._formSubmits.filter(t=>now-t<60000);
+  if(window._formSubmits.length>=3){showToast("Příliš mnoho pokusů, zkuste to za minutu","error");return}
+  window._formSubmits.push(now);
   btn.classList.add("loading");btn.textContent="Odesílám...";
   try {
     const formData = new FormData(e.target);
