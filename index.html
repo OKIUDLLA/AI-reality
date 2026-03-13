@@ -8,8 +8,21 @@
 <meta property="og:title" content="BydlímTu Reality — AI asistent pro nemovitosti">
 <meta property="og:description" content="Najděte vysněný domov s AI asistentem. Tisíce reálných nemovitostí ze Sreality.cz a Bezrealitky.cz.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&h=630&fit=crop">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://bydlimtu.netlify.app/">
+<meta property="og:locale" content="cs_CZ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BydlímTu Reality — AI asistent pro nemovitosti">
+<meta name="twitter:description" content="Najděte vysněný domov s AI asistentem. Tisíce reálných nemovitostí ze Sreality.cz a Bezrealitky.cz.">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&h=630&fit=crop">
+<link rel="canonical" href="https://bydlimtu.netlify.app/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='0' y='28' font-size='32'>🏠</text></svg>">
 <title>BydlímTu Reality — Váš AI asistent pro nemovitosti</title>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"RealEstateAgent","name":"BydlímTu Reality","description":"AI asistent pro vyhledávání nemovitostí v ČR. Tisíce reálných nabídek ze Sreality.cz a Bezrealitky.cz.","url":"https://bydlimtu.netlify.app","areaServed":{"@type":"Country","name":"CZ"},"knowsLanguage":"cs","contactPoint":{"@type":"ContactPoint","telephone":"+420-123-456-789","contactType":"customer service","availableLanguage":"cs"}}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
@@ -743,6 +756,9 @@ async function loadLiveData() {
         loadMorePagesInBackground(Math.min(propData.totalPages, 50));
       }
 
+      // Update hero location select with real cities from data
+      updateHeroLocations();
+
       // Re-render
       renderProperties(true);
       renderMap();
@@ -925,6 +941,24 @@ function renderMap() {
 
   // Invalidate map size in case it was hidden during init
   setTimeout(() => { propertyMap.invalidateSize(); }, 300);
+}
+
+// Dynamically fill hero location select from loaded data
+function updateHeroLocations() {
+  const sel = document.getElementById("heroLoc");
+  if (!sel) return;
+  const cities = {};
+  DB.forEach(p => { if (p.loc) cities[p.loc] = (cities[p.loc]||0) + 1; });
+  const sorted = Object.entries(cities).sort((a,b) => b[1] - a[1]);
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">Celá ČR</option>';
+  sorted.forEach(([city, count]) => {
+    const opt = document.createElement("option");
+    opt.value = city;
+    opt.textContent = `${city} (${count})`;
+    sel.appendChild(opt);
+  });
+  if (currentVal) sel.value = currentVal;
 }
 
 function showDataSourceBadge(updated, count) {
@@ -1125,12 +1159,17 @@ document.getElementById("filterTabs").addEventListener("click",e=>{
 document.getElementById("sortSelect").addEventListener("change",()=>{currentSort=document.getElementById("sortSelect").value;renderProperties()});
 document.getElementById("sourceSelect").addEventListener("change",()=>renderProperties(true));
 document.getElementById("heroSearchForm").addEventListener("submit",e=>{
-  e.preventDefault();currentFilter="all";
-  document.querySelectorAll(".filter-tab").forEach(t=>t.classList.remove("active"));
-  document.querySelector('[data-filter="all"]').classList.add("active");
+  e.preventDefault();
+  // Sync hero type with filter tabs
+  const heroTypeVal = document.getElementById("heroType").value;
+  currentFilter = heroTypeVal || "all";
+  document.querySelectorAll(".filter-tab").forEach(t=>{
+    t.classList.toggle("active", t.dataset.filter === currentFilter);
+  });
   renderProperties(true);
   document.getElementById("properties").scrollIntoView({behavior:"smooth"});
-  showToast(`Nalezeno ${getFiltered().length} nemovitostí`);
+  const count = getFiltered().length;
+  showToast(`Nalezeno ${count} nemovitostí`);
 });
 
 // ===== FAVORITES =====
@@ -1496,8 +1535,11 @@ function respond(input){
   // PRICES
   if(L.match(/cen[auy]|kolik.*sto[jí]|rozpočet|za kolik|nejlevnější|nejdražší/)){
     const s=[...DB].sort((a,b)=>a.price-b.price);
-    const avg=Math.round(DB.filter(p=>p.tx==="prodej").reduce((s,p)=>s+p.price,0)/DB.filter(p=>p.tx==="prodej").length);
-    return{html:`<strong>Cenové rozpětí:</strong><br>Od: ${fmtPrice(s[0].price,s[0].tx)}<br>Do: ${fmtPrice(s[s.length-1].price,s[s.length-1].tx)}<br>Průměr (prodej): ${fmt(avg)} Kč<br><br>V jakém rozpočtu hledáte?`,qr:["Do 5 mil.","5-10 mil.","10-20 mil.","Pronájem"]}
+    if(!s.length)return{html:"Zatím nemám žádné nemovitosti v nabídce.",qr:["Zobrazit vše"]};
+    const sales=DB.filter(p=>p.tx==="prodej");
+    const avg=sales.length?Math.round(sales.reduce((s,p)=>s+p.price,0)/sales.length):0;
+    const avgText=avg?`<br>Průměr (prodej): ${fmt(avg)} Kč`:"";
+    return{html:`<strong>Cenové rozpětí:</strong><br>Od: ${fmtPrice(s[0].price,s[0].tx)}<br>Do: ${fmtPrice(s[s.length-1].price,s[s.length-1].tx)}${avgText}<br><br>V jakém rozpočtu hledáte?`,qr:["Do 5 mil.","5-10 mil.","10-20 mil.","Pronájem"]}
   }
 
   // RENTALS
@@ -1551,7 +1593,7 @@ function respond(input){
   // SPECIFIC PROPERTY
   if(L.match(/(?:bt|sr|br)-\d+/i)){
     const id=L.match(/(?:bt|sr|br)-\d+/i)[0].toUpperCase();const p=DB.find(x=>x.id===id);
-    if(p){chatContext.propertyId=id;return{html:`<strong>${p.title}</strong><br>${p.addr} • ${fmtPrice(p.price,p.tx)}<br><br>${p.desc.substring(0,180)}...`,qr:["Domluvit prohlídku","Cena za m²","Okolí","Kontakt"]}}
+    if(p){chatContext.propertyId=id;const desc=p.desc?p.desc.substring(0,180)+"...":p.title+", "+p.addr;return{html:`<strong>${p.title}</strong><br>${p.addr} • ${fmtPrice(p.price,p.tx)}${p.size?" • "+p.size+" m²":""}${p.disposition?" • "+p.disposition:""}<br><br>${desc}`,qr:["Domluvit prohlídku","Cena za m²","Okolí","Kontakt"]}}
   }
 
   // BUDGET
@@ -1567,13 +1609,13 @@ function respond(input){
   // LOCATIONS
   const locs=["praha","brno","ostrava","plzeň","olomouc","liberec"];
   for(const loc of locs){if(L.includes(loc)){
-    const m=DB.filter(p=>p.loc.toLowerCase()===loc||p.addr.toLowerCase().includes(loc));
+    const m=DB.filter(p=>(p.loc||"").toLowerCase()===loc||(p.addr||"").toLowerCase().includes(loc));
     if(m.length){chatContext.lastSearch=m;return{html:`V <strong>${loc.charAt(0).toUpperCase()+loc.slice(1)}</strong> mám ${m.length} nemovitostí:${renderChatCards(m.slice(0,3))}`,qr:["Filtrovat cenu","Jen byty","Jen pronájem","Kontakt"]}}
   }}
 
   // TYPES
-  if(L.match(/byt[ůy]?(?:\s|$|\.)/)){const m=DB.filter(p=>p.type==="byt");return{html:`Mám <strong>${m.length} bytů</strong> — od ${fmtPrice(m.sort((a,b)=>a.price-b.price)[0].price,m[0].tx)}.`,qr:["Byty v Praze","Byty v Brně","Pronájem bytu","Do 8 mil."]}}
-  if(L.match(/d[oů]m[ůy]?|rodinný|vil/)){const m=DB.filter(p=>p.type==="dům");return{html:`Mám <strong>${m.length} domů</strong>. Hledáte rodinný dům, vilu, nebo řadový?`,qr:["Domy Praha","Se zahradou","S bazénem","Do 15 mil."]}}
+  if(L.match(/byt[ůy]?(?:\s|$|\.)/)){const m=DB.filter(p=>p.type==="byt");if(m.length){m.sort((a,b)=>a.price-b.price);return{html:`Mám <strong>${m.length} bytů</strong> — od ${fmtPrice(m[0].price,m[0].tx)}.${renderChatCards(m.slice(0,3))}`,qr:["Byty v Praze","Byty v Brně","Pronájem bytu","Do 8 mil."]}}return{html:"Momentálně nemám v nabídce žádné byty. Zkuste to později.",qr:["Domy","Komerční","Kontakt"]}}
+  if(L.match(/d[oů]m[ůy]?|rodinný|vil/)){const m=DB.filter(p=>p.type==="dům");if(m.length){return{html:`Mám <strong>${m.length} domů</strong>:${renderChatCards(m.slice(0,3))}`,qr:["Domy Praha","Se zahradou","S bazénem","Do 15 mil."]}}return{html:"Momentálně nemám v nabídce žádné domy.",qr:["Byty","Komerční","Kontakt"]}}
 
   // SERVICES
   if(L.match(/služb|stojí|cení|kolik.*popl|provize/)){return{html:"Naše služby pro <strong>kupující jsou zdarma</strong>. Pro prodávající účtujeme provizi 2-4 % z prodejní ceny. V ceně je kompletní servis — fotografie, marketing, právní služby, AI chatbot.",qr:["Chci prodat","Chci koupit","Kontakt"]}}
@@ -1627,7 +1669,7 @@ function searchDB(L){
   else if(L.match(/komerc|kancel|obchod/))r=r.filter(p=>p.type==="komerční");
   else if(L.match(/pozem/))r=r.filter(p=>p.type==="pozemek");
   const locs=["praha","brno","ostrava","plzeň","olomouc","liberec"];
-  for(const loc of locs){if(L.includes(loc))r=r.filter(p=>p.loc.toLowerCase()===loc||p.addr.toLowerCase().includes(loc))}
+  for(const loc of locs){if(L.includes(loc))r=r.filter(p=>(p.loc||"").toLowerCase()===loc||(p.addr||"").toLowerCase().includes(loc))}
   if(L.match(/pronáj/))r=r.filter(p=>p.tx==="pronájem");
   else if(L.match(/koup|koupit/))r=r.filter(p=>p.tx==="prodej");
   return r;
