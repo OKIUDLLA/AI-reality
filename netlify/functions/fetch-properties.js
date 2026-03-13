@@ -105,7 +105,10 @@ function buildSrealityUrl(estate, tx, catSlug, hid) {
     else subSlug = "ostatni";
   }
   const txSlug = tx === "pronájem" ? "pronajem" : "prodej";
-  return `https://www.sreality.cz/detail/${txSlug}/${catSlug}/${subSlug}/${locality}${hid}`;
+  // Sreality URL format: /detail/{tx}/{cat}/{sub}/{locality}/{hash_id}
+  // Locality from API may or may not end with dash — always add slash before hash_id
+  const loc = locality.endsWith("/") ? locality : locality + "/";
+  return `https://www.sreality.cz/detail/${txSlug}/${catSlug}/${subSlug}/${loc}${hid}`;
 }
 
 // ===== SREALITY DETAIL FETCHER (for individual properties) =====
