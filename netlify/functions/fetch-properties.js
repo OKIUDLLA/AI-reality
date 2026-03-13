@@ -147,11 +147,13 @@ function toProperty(estate) {
   const slug = CAT_SLUG[cat] || cat;
 
   const imgs = [];
-  for (const img of ((estate._links || {}).images || []).slice(0, 3)) {
+  // Use image_middle2 first (optimized thumbnail), then fall back to images array
+  const imgSources = (estate._links || {}).image_middle2 || (estate._links || {}).images || [];
+  for (const img of imgSources.slice(0, 5)) {
     let href = img.href || "";
     if (href.startsWith("//")) href = "https:" + href;
-    href = href.split("?")[0]; // strip query params
-    if (href) imgs.push(href);
+    // Keep query params! They contain CDN resize instructions (fl=res,400,300,...)
+    if (href && href.startsWith("http")) imgs.push(href);
   }
   if (!imgs.length) imgs.push("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600");
 
