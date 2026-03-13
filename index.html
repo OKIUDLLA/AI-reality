@@ -82,6 +82,12 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 .properties-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
 .property-card{background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:all .3s;cursor:pointer;border:1px solid var(--border);opacity:0;animation:cardIn .4s ease forwards}
 @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+.skeleton-card{background:var(--white);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.skeleton-card .sk-img{height:220px;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+.skeleton-card .sk-body{padding:18px}
+.skeleton-card .sk-line{height:14px;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;margin-bottom:10px}
+.skeleton-card .sk-line.short{width:60%}.skeleton-card .sk-line.mid{width:80%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .property-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-xl)}
 .property-img{height:220px;background-size:cover;background-position:center;position:relative}
 .property-img .badges{position:absolute;top:12px;left:12px;display:flex;gap:6px}
@@ -488,13 +494,15 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 </div>
 <div class="contact-form-card">
 <h3>Nezávazná poptávka</h3>
-<form class="contact-form" id="contactForm">
-<input type="text" placeholder="Jméno a příjmení *" required id="cName" aria-label="Jméno">
-<input type="email" placeholder="E-mail *" required id="cEmail" aria-label="E-mail" oninput="validateEmail(this)">
+<form class="contact-form" id="contactForm" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+<input type="hidden" name="form-name" value="contact">
+<p style="display:none"><label>Nevyplňujte: <input name="bot-field"></label></p>
+<input type="text" name="name" placeholder="Jméno a příjmení *" required id="cName" aria-label="Jméno">
+<input type="email" name="email" placeholder="E-mail *" required id="cEmail" aria-label="E-mail" oninput="validateEmail(this)">
 <div class="field-msg" id="emailMsg"></div>
-<input type="tel" placeholder="Telefon" id="cPhone" aria-label="Telefon" oninput="formatPhone(this)">
-<select id="cSubject" aria-label="Předmět"><option value="">Předmět poptávky</option><option value="koupě">Chci koupit</option><option value="prodej">Chci prodat</option><option value="pronájem">Hledám pronájem</option><option value="odhad">Odhad ceny</option><option value="jiné">Jiné</option></select>
-<textarea placeholder="Vaše zpráva..." id="cMsg" aria-label="Zpráva"></textarea>
+<input type="tel" name="phone" placeholder="Telefon" id="cPhone" aria-label="Telefon" oninput="formatPhone(this)">
+<select name="subject" id="cSubject" aria-label="Předmět"><option value="">Předmět poptávky</option><option value="koupě">Chci koupit</option><option value="prodej">Chci prodat</option><option value="pronájem">Hledám pronájem</option><option value="odhad">Odhad ceny</option><option value="jiné">Jiné</option></select>
+<textarea name="message" placeholder="Vaše zpráva..." id="cMsg" aria-label="Zpráva"></textarea>
 <button type="submit" class="contact-submit" id="contactBtn">Odeslat poptávku</button>
 </form>
 </div>
@@ -515,6 +523,12 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 </div>
 </div>
 </footer>
+
+<!-- Hidden Netlify form for chatbot leads -->
+<form name="chatbot-lead" data-netlify="true" netlify-honeypot="bot-field" hidden>
+<input name="form-name" type="hidden" value="chatbot-lead">
+<input name="name"><input name="email"><input name="phone"><input name="interest"><input name="propertyId"><input name="source">
+</form>
 
 <!-- CHATBOT -->
 <button class="chatbot-trigger" id="chatTrigger" onclick="toggleChat()" aria-label="Otevřít AI chat">
@@ -645,6 +659,7 @@ async function tryFetch(urls) {
 
 async function loadLiveData() {
   console.log("[BydlímTu] Načítám živá data...");
+  if (!DATA_LOADED) showSkeletons(6);
 
   // Load properties — try API first (paginates 60 at a time), then static file
   try {
@@ -859,6 +874,12 @@ function getFiltered(){
     default:r.sort((a,b)=>(a.added??999)-(b.added??999));
   }
   return r;
+}
+
+// ===== SKELETON =====
+function showSkeletons(count=6){
+  const grid=document.getElementById("propertiesGrid");
+  grid.innerHTML=Array(count).fill(0).map(()=>`<div class="skeleton-card"><div class="sk-img"></div><div class="sk-body"><div class="sk-line short"></div><div class="sk-line"></div><div class="sk-line mid"></div><div class="sk-line short"></div></div></div>`).join("");
 }
 
 // ===== RENDER =====
@@ -1416,11 +1437,32 @@ function processLead(txt){
     case 2:if(txt.includes("@")&&txt.includes(".")){leadData.email=txt;leadStage=3;botMsg("A <strong>telefonní číslo</strong>, pokud chcete, abychom zavolali:",["Přeskočit"])}else{botMsg("To nevypadá jako platný e-mail. Zkuste prosím znovu:")};break;
     case 3:leadData.phone=txt.toLowerCase()==="přeskočit"?"":txt;leadStage=4;botMsg("Co vás zajímá?",["Koupě nemovitosti","Prodej nemovitosti","Pronájem","Odhad ceny"]);break;
     case 4:leadData.interest=txt;leadStage=5;
+      // Submit lead to Netlify Forms
+      submitChatLead(leadData);
       botMsg(`<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;margin-top:4px">
-        <strong style="color:#166534">Lead úspěšně zachycen!</strong><br>
+        <strong style="color:#166534">Poptávka odeslána!</strong><br>
         <div style="margin-top:6px;font-size:.8rem"><strong>Jméno:</strong> ${leadData.name}<br><strong>E-mail:</strong> ${leadData.email}<br>${leadData.phone?`<strong>Tel:</strong> ${leadData.phone}<br>`:""}<strong>Zájem:</strong> ${leadData.interest}</div></div>
         Děkuji! Náš makléř se ozve do <strong>24 hodin</strong>. Mezitím se mě ptejte na cokoliv.`,["Zobrazit nabídku","Mám dotaz","Děkuji"]);
-      leadStage=0;leadData={};showToast("Lead úspěšně kvalifikován!");break;
+      leadStage=0;leadData={};showToast("Poptávka úspěšně odeslána!");break;
+  }
+}
+
+// ===== CHATBOT LEAD SUBMIT =====
+async function submitChatLead(data) {
+  try {
+    const body = new URLSearchParams({
+      "form-name": "chatbot-lead",
+      name: data.name || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      interest: data.interest || "",
+      propertyId: chatContext.propertyId || "",
+      source: "AI Chatbot",
+    });
+    await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    console.log("[BydlímTu] Chatbot lead submitted:", data.email);
+  } catch(e) {
+    console.log("[BydlímTu] Lead submit error:", e);
   }
 }
 
@@ -1434,17 +1476,31 @@ function validateEmail(el){
   el.classList.toggle("field-error",!valid);
 }
 function formatPhone(el){let v=el.value.replace(/[^\d+]/g,"");if(v.startsWith("+420")&&v.length>4){v="+420 "+v.slice(4).replace(/(\d{3})/g,"$1 ").trim()}el.value=v}
-document.getElementById("contactForm").addEventListener("submit",e=>{
+document.getElementById("contactForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=document.getElementById("contactBtn");
   const name=document.getElementById("cName").value,email=document.getElementById("cEmail").value;
   if(!name||!email){showToast("Vyplňte jméno a e-mail","error");return}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast("Neplatný e-mail","error");return}
   btn.classList.add("loading");btn.textContent="Odesílám...";
-  setTimeout(()=>{btn.classList.remove("loading");btn.classList.add("success");btn.textContent="Odesláno ✓";
-    showToast(`Děkujeme, ${name.split(" ")[0]}! Ozveme se do 24 hodin.`);
-    e.target.reset();document.getElementById("emailMsg").textContent="";
-    setTimeout(()=>{btn.classList.remove("success");btn.textContent="Odeslat poptávku"},3000);
-  },1500);
+  try {
+    const formData = new FormData(e.target);
+    const resp = await fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(formData).toString(),
+    });
+    if (resp.ok) {
+      btn.classList.remove("loading");btn.classList.add("success");btn.textContent="Odesláno ✓";
+      showToast(`Děkujeme, ${name.split(" ")[0]}! Ozveme se do 24 hodin.`);
+      e.target.reset();document.getElementById("emailMsg").textContent="";
+      setTimeout(()=>{btn.classList.remove("success");btn.textContent="Odeslat poptávku"},3000);
+    } else {
+      throw new Error("Chyba serveru");
+    }
+  } catch(err) {
+    btn.classList.remove("loading");btn.textContent="Odeslat poptávku";
+    showToast("Odeslání se nezdařilo, zkuste to prosím znovu.","error");
+  }
 });
 
 // ===== LIVE ELEMENTS =====

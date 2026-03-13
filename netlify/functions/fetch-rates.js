@@ -54,11 +54,13 @@ async function fetchFreshRates() {
         });
         if (resp.ok) {
           const html = await resp.text();
-          // Extract Hypoindex value
-          const match = html.match(/(\d[,.]\d{1,2})\s*%/);
+          // Extract Hypoindex value — more specific regex to avoid matching random percentages
+          const match = html.match(/[Hh]ypoindex[^0-9]*?(\d[,.]\d{1,2})\s*%/) ||
+                        html.match(/průměrná[^0-9]*?sazba[^0-9]*?(\d[,.]\d{1,2})\s*%/) ||
+                        html.match(/aktuální[^0-9]*?(\d[,.]\d{1,2})\s*%\s*p\.?\s*a/);
           if (match) {
             const rate = parseFloat(match[1].replace(",", "."));
-            if (rate > 2 && rate < 10) {
+            if (rate > 2.5 && rate < 8) {
               // Use fresh Hypoindex but keep bank details from known data
               const freshData = { ...KNOWN_RATES_2026 };
               freshData.hypoindex = rate;
