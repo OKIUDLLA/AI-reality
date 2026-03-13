@@ -12,6 +12,8 @@
 <title>BydlímTu Reality — Váš AI asistent pro nemovitosti</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--primary:#1a56db;--primary-dark:#1244b0;--primary-light:#e8effc;--accent:#f59e0b;--success:#10b981;--danger:#ef4444;--text:#1f2937;--text-light:#6b7280;--text-lighter:#9ca3af;--bg:#f9fafb;--white:#fff;--border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);--shadow-xl:0 20px 25px -5px rgba(0,0,0,.1);--radius:12px;--radius-sm:8px}
@@ -158,6 +160,29 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 .feature-icon{width:56px;height:56px;background:var(--primary-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:var(--primary)}
 .feature-card h3{font-size:1.05rem;font-weight:700;margin-bottom:8px}
 .feature-card p{color:var(--text-light);font-size:.9rem;line-height:1.6}
+
+/* MAP */
+.map-section{padding:80px 0;background:var(--white)}
+.map-section .section-title{text-align:center;margin-bottom:8px}
+.map-section .section-subtitle{text-align:center;color:var(--text-light);margin-bottom:28px;font-size:.95rem}
+.map-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-lg);position:relative}
+#propertiesMap{height:500px;width:100%;z-index:0}
+.map-stats{display:flex;gap:16px;justify-content:center;margin-top:16px;font-size:.85rem;color:var(--text-light)}
+.map-stats span{display:flex;align-items:center;gap:6px}
+.map-stats .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dot-sale{background:var(--primary)}.dot-rent{background:var(--success)}.dot-commercial{background:var(--accent)}
+.map-empty{display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-light);flex-direction:column;gap:12px}
+.map-empty i{font-size:2.5rem;color:var(--border)}
+.leaflet-popup-content{font-family:'Inter',sans-serif;font-size:.85rem;line-height:1.5}
+.map-popup{min-width:200px}
+.map-popup img{width:100%;height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px}
+.map-popup h4{font-size:.95rem;font-weight:600;margin-bottom:2px}
+.map-popup .pop-loc{font-size:.8rem;color:var(--text-light);margin-bottom:4px}
+.map-popup .pop-price{font-size:1rem;font-weight:700;color:var(--primary)}
+.map-popup .pop-feat{font-size:.75rem;color:var(--text-light);margin-top:2px}
+.map-popup .pop-btn{display:inline-block;margin-top:8px;padding:5px 12px;background:var(--primary);color:#fff;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;text-align:center}
+.map-popup .pop-btn:hover{background:var(--primary-dark)}
+.custom-map-pin{background:none!important;border:none!important}
 
 /* CALCULATOR */
 .calc-section{padding:80px 0;background:linear-gradient(135deg,#1e3a5f 0%,#1a56db 100%);color:#fff}
@@ -326,6 +351,8 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 .stats-grid{grid-template-columns:repeat(2,1fr)}.testimonials-grid{grid-template-columns:1fr}
 .contact-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}
 .chatbot-window{width:calc(100vw - 16px);right:8px;bottom:90px;height:70vh}
+#propertiesMap{height:350px}
+.map-stats{flex-wrap:wrap;gap:8px;font-size:.8rem}
 .modal-features{grid-template-columns:repeat(2,1fr)}.modal-gallery{height:240px}
 .form-row{grid-template-columns:1fr}.fav-drawer{width:100%}
 .calc-grid{gap:24px}.live-notification{max-width:calc(100vw - 48px)}
@@ -341,6 +368,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <a href="#" class="logo" aria-label="BydlímTu Reality - domů"><i class="fas fa-home"></i> BydlímTu</a>
 <ul class="nav-links" id="navLinks">
 <li><a href="#properties">Nemovitosti</a></li>
+<li><a href="#map">Mapa</a></li>
 <li><a href="#calculator">Hypotéka</a></li>
 <li><a href="#features">Služby</a></li>
 <li><a href="#testimonials">Reference</a></li>
@@ -410,6 +438,18 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <div class="properties-count" id="propertiesCount"></div>
 <div class="properties-grid" id="propertiesGrid"></div>
 <div class="load-more-wrap" id="loadMoreWrap"><button class="load-more" onclick="loadMore()">Načíst další nemovitosti</button></div>
+</div>
+</section>
+
+<!-- MAP -->
+<section class="map-section" id="map">
+<div class="container">
+<h2 class="section-title">Nemovitosti na mapě</h2>
+<p class="section-subtitle">Prozkoumejte nabídku podle lokality — klikněte na pin pro detail</p>
+<div class="map-wrap">
+<div id="propertiesMap"></div>
+</div>
+<div class="map-stats" id="mapStats"></div>
 </div>
 </section>
 
@@ -589,51 +629,51 @@ const FALLBACK_DB = [
   {id:"BT-001",type:"byt",tx:"prodej",title:"Luxusní byt 3+kk s terasou, Vinohrady",loc:"Praha",addr:"Praha 2 — Vinohrady",price:12500000,size:98,rooms:3,bath:1,floor:4,floors:6,
    imgs:["https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800","https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800","https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800"],
    badges:["new"],desc:"Exkluzivní byt 3+kk v samém srdci Vinohrad. Kompletní rekonstrukce 2024 — moderní dispozice s prostorným obývacím pokojem propojeným s kuchyňským koutem, dvěma ložnicemi a luxusní koupelnou. Terasa 15 m² s výhledem na park. Podzemní garáž, sklep.",
-   amenities:["Terasa","Garáž","Sklep","Výtah","Rekonstrukce 2024","Parkování","Klidná lokalita"],energy:"B",avail:"Ihned",built:1935,recon:2024,added:1},
+   amenities:["Terasa","Garáž","Sklep","Výtah","Rekonstrukce 2024","Parkování","Klidná lokalita"],energy:"B",avail:"Ihned",built:1935,recon:2024,added:1,gps:{lat:50.0755,lng:14.4378}},
   {id:"BT-002",type:"dům",tx:"prodej",title:"Rodinný dům 5+1 se zahradou, Černošice",loc:"Praha",addr:"Černošice u Prahy",price:18900000,size:220,rooms:5,bath:2,floor:null,floors:2,
    imgs:["https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800","https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800","https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800"],
    badges:["hot"],desc:"Prostorný rodinný dům v klidné vilové čtvrti. 5 pokojů, 2 koupelny, kuchyň s jídelním koutem, garáž pro 2 auta, zahrada 850 m². Vlak do centra Prahy 25 min.",
-   amenities:["Zahrada 850 m²","Garáž 2 auta","Klidná lokalita","Vlak 5 min","Nízkoenergetický","Podlahové topení","Krb"],energy:"A",avail:"Od 1.5.2026",built:2018,recon:null,added:3},
+   amenities:["Zahrada 850 m²","Garáž 2 auta","Klidná lokalita","Vlak 5 min","Nízkoenergetický","Podlahové topení","Krb"],energy:"A",avail:"Od 1.5.2026",built:2018,recon:null,added:3,gps:{lat:49.9624,lng:14.3240}},
   {id:"BT-003",type:"byt",tx:"pronájem",title:"Moderní byt 2+kk, Karlín",loc:"Praha",addr:"Praha 8 — Karlín",price:28000,size:62,rooms:2,bath:1,floor:7,floors:10,
    imgs:["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800","https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=800","https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=800"],
    badges:[],desc:"Designový byt 2+kk v novostavbě v Karlíně. Kompletně zařízený designovým nábytkem, otevřená dispozice, ložnice, moderní koupelna, balkon. Metro Křižíkova 3 min.",
-   amenities:["Zařízený","Balkon","Metro 3 min","Novostavba","Sklep","Prádelna v domě","Recepce"],energy:"A",avail:"Ihned",built:2022,recon:null,added:0},
+   amenities:["Zařízený","Balkon","Metro 3 min","Novostavba","Sklep","Prádelna v domě","Recepce"],energy:"A",avail:"Ihned",built:2022,recon:null,added:0,gps:{lat:50.0920,lng:14.4503}},
   {id:"BT-004",type:"komerční",tx:"pronájem",title:"Obchodní prostor 120 m², centrum Brna",loc:"Brno",addr:"Brno — Centrum",price:45000,size:120,rooms:3,bath:1,floor:0,floors:4,
    imgs:["https://images.unsplash.com/photo-1497366216548-37526070297c?w=800","https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800","https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800"],
    badges:["price"],desc:"Reprezentativní obchodní prostor v přízemí historické budovy na Náměstí Svobody. Vhodný pro showroom, kavárnu, kancelář. Vysoké stropy, velká výloha, klimatizace.",
-   amenities:["Centrum města","Velká výloha","Klimatizace","Vysoké stropy","Bezbariérový","Parkování u domu"],energy:"C",avail:"Od 1.4.2026",built:1890,recon:2020,added:5},
+   amenities:["Centrum města","Velká výloha","Klimatizace","Vysoké stropy","Bezbariérový","Parkování u domu"],energy:"C",avail:"Od 1.4.2026",built:1890,recon:2020,added:5,gps:{lat:49.1951,lng:16.6068}},
   {id:"BT-005",type:"dům",tx:"prodej",title:"Vila s bazénem, Šárecké údolí",loc:"Praha",addr:"Praha 6 — Šárecké údolí",price:42000000,size:380,rooms:7,bath:3,floor:null,floors:3,
    imgs:["https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800","https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800","https://images.unsplash.com/photo-1600573472556-e636c2acda9e?w=800"],
    badges:["hot"],desc:"Exkluzivní vila v prestižní lokalitě. Třípodlažní rezidence s bazénem, wellness, vinným sklepem, zahradou 1200 m². Interiér od architektonického studia, prémiové materiály. Smart Home.",
-   amenities:["Bazén","Wellness","Vinný sklep","Smart Home","Dvojgaráž","Zahrada 1200 m²","Security systém","Designový interiér"],energy:"A",avail:"Po dohodě",built:2021,recon:null,added:7},
+   amenities:["Bazén","Wellness","Vinný sklep","Smart Home","Dvojgaráž","Zahrada 1200 m²","Security systém","Designový interiér"],energy:"A",avail:"Po dohodě",built:2021,recon:null,added:7,gps:{lat:50.1023,lng:14.3575}},
   {id:"BT-006",type:"byt",tx:"prodej",title:"Byt 2+1 po rekonstrukci, Žabovřesky",loc:"Brno",addr:"Brno — Žabovřesky",price:5800000,size:68,rooms:2,bath:1,floor:3,floors:5,
    imgs:["https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800","https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800","https://images.unsplash.com/photo-1560448075-bb485b067938?w=800"],
    badges:["new"],desc:"Kompletně zrekonstruovaný byt 2+1 v Žabovřeskách. Nová kuchyňská linka, koupelna, podlahy, rozvody. Dva pokoje, kuchyň, předsíň, komora. Tramvaj 2 min.",
-   amenities:["Rekonstrukce 2025","Komora","Tramvaj 2 min","Tichá ulice","Sklep","Plastová okna"],energy:"C",avail:"Ihned",built:1975,recon:2025,added:2},
+   amenities:["Rekonstrukce 2025","Komora","Tramvaj 2 min","Tichá ulice","Sklep","Plastová okna"],energy:"C",avail:"Ihned",built:1975,recon:2025,added:2,gps:{lat:49.2108,lng:16.5869}},
   {id:"BT-007",type:"pozemek",tx:"prodej",title:"Stavební pozemek 1200 m², Jesenice",loc:"Praha",addr:"Jesenice u Prahy",price:8400000,size:1200,rooms:0,bath:0,floor:null,floors:null,
    imgs:["https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800","https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=800"],
    badges:[],desc:"Rovinatý stavební pozemek. Všechny IS na hranici (elektřina, voda, kanalizace, plyn). ÚP umožňuje výstavbu RD. Klidná lokalita s kompletní občanskou vybaveností.",
-   amenities:["IS na hranici","Rovinatý","Klidná lokalita","ÚP pro RD","Škola 500 m","Obchody 300 m"],energy:null,avail:"Ihned",built:null,recon:null,added:10},
+   amenities:["IS na hranici","Rovinatý","Klidná lokalita","ÚP pro RD","Škola 500 m","Obchody 300 m"],energy:null,avail:"Ihned",built:null,recon:null,added:10,gps:{lat:49.9681,lng:14.5128}},
   {id:"BT-008",type:"byt",tx:"pronájem",title:"Podkrovní byt 1+kk, Malá Strana",loc:"Praha",addr:"Praha 1 — Malá Strana",price:22000,size:38,rooms:1,bath:1,floor:5,floors:5,
    imgs:["https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800","https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800"],
    badges:[],desc:"Útulný podkrovní byt s výhledem na Pražský hrad. Kuchyňský kout, sprchový kout, WC. Historický dům v centru Malé Strany. Částečně zařízený.",
-   amenities:["Výhled na Hrad","Historický dům","Částečně zařízený","Centrum","Tram 1 min"],energy:"D",avail:"Od 1.6.2026",built:1780,recon:2019,added:4},
+   amenities:["Výhled na Hrad","Historický dům","Částečně zařízený","Centrum","Tram 1 min"],energy:"D",avail:"Od 1.6.2026",built:1780,recon:2019,added:4,gps:{lat:50.0870,lng:14.4040}},
   {id:"BT-009",type:"komerční",tx:"prodej",title:"Kancelářský komplex 450 m², Ostrava",loc:"Ostrava",addr:"Ostrava — Poruba",price:15000000,size:450,rooms:12,bath:4,floor:null,floors:3,
    imgs:["https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800","https://images.unsplash.com/photo-1497366216548-37526070297c?w=800","https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=800"],
    badges:["price"],desc:"Samostatný kancelářský objekt — 12 kanceláří, zasedací místnost, kuchyňka, soc. zázemí. Parkoviště 20 míst. Kompletní revitalizace vč. zateplení.",
-   amenities:["Parkoviště 20 míst","Zasedací místnost","Klimatizace","Optické připojení","Zatepleno","Alarm"],energy:"B",avail:"Ihned",built:2005,recon:2023,added:8},
+   amenities:["Parkoviště 20 míst","Zasedací místnost","Klimatizace","Optické připojení","Zatepleno","Alarm"],energy:"B",avail:"Ihned",built:2005,recon:2023,added:8,gps:{lat:49.8345,lng:18.1629}},
   {id:"BT-010",type:"byt",tx:"prodej",title:"Mezonetový byt 4+kk, Smíchov",loc:"Praha",addr:"Praha 5 — Smíchov",price:16800000,size:145,rooms:4,bath:2,floor:5,floors:6,
    imgs:["https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800","https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800","https://images.unsplash.com/photo-1600566753376-12c8ab7c17a0?w=800"],
    badges:["new","hot"],desc:"Unikátní mezonet ve 2 úrovních. Dolní: obývák s kuchyní, pracovna, koupelna, terasa. Horní: master ložnice s en-suite, 2 dětské pokoje. Garáž, sklep.",
-   amenities:["Mezonet","Terasa","Garáž","2x koupelna","Novostavba","Sklep","Smart Home","Výhled"],energy:"A",avail:"Od 1.7.2026",built:2025,recon:null,added:0},
+   amenities:["Mezonet","Terasa","Garáž","2x koupelna","Novostavba","Sklep","Smart Home","Výhled"],energy:"A",avail:"Od 1.7.2026",built:2025,recon:null,added:0,gps:{lat:50.0701,lng:14.4031}},
   {id:"BT-011",type:"dům",tx:"pronájem",title:"Řadový dům 4+kk, Plzeň",loc:"Plzeň",addr:"Plzeň — Slovany",price:32000,size:130,rooms:4,bath:1,floor:null,floors:2,
    imgs:["https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=800","https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800"],
    badges:[],desc:"Řadový RD v klidné rezidenční čtvrti. 4 pokoje, koupelna, WC, garáž, předzahrádka. V dobrém stavu, nezařízený. Zvířata OK.",
-   amenities:["Zahrádka","Garáž","Zvířata OK","Klidná ulice","Škola 5 min","MHD 3 min"],energy:"C",avail:"Ihned",built:2008,recon:null,added:6},
+   amenities:["Zahrádka","Garáž","Zvířata OK","Klidná ulice","Škola 5 min","MHD 3 min"],energy:"C",avail:"Ihned",built:2008,recon:null,added:6,gps:{lat:49.7384,lng:13.3736}},
   {id:"BT-012",type:"pozemek",tx:"prodej",title:"Pozemek s výhledem 2500 m², Liberec",loc:"Liberec",addr:"Liberec — Vratislavice",price:4200000,size:2500,rooms:0,bath:0,floor:null,floors:null,
    imgs:["https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800","https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800"],
    badges:["price"],desc:"Stavební pozemek s panoramatickým výhledem na Ještěd. Mírně svažitý, ideální pro architektonicky zajímavou stavbu. Elektřina a voda na pozemku.",
-   amenities:["Výhled na Ještěd","Elektřina","Voda","Přístupová cesta","2500 m²"],energy:null,avail:"Ihned",built:null,recon:null,added:12}
+   amenities:["Výhled na Ještěd","Elektřina","Voda","Přístupová cesta","2500 m²"],energy:null,avail:"Ihned",built:null,recon:null,added:12,gps:{lat:50.7663,lng:15.0543}}
 ];
 
 // Initialize with fallback
@@ -705,6 +745,7 @@ async function loadLiveData() {
 
       // Re-render
       renderProperties(true);
+      renderMap();
     }
   } catch (e) {
     console.log("[BydlímTu] Živá data nemovitostí nedostupná, používám ukázková data.", e);
@@ -761,6 +802,129 @@ async function loadMorePagesInBackground(maxPage) {
     await new Promise(r => setTimeout(r, 500));
   }
   console.log(`[BydlímTu] Background loading done. Total: ${DB.length} nemovitostí`);
+  // Refresh map with all loaded properties
+  renderMap();
+}
+
+// ===== INTERACTIVE MAP =====
+let propertyMap = null;
+let mapMarkers = null;
+
+function renderMap() {
+  const mapEl = document.getElementById("propertiesMap");
+  if (!mapEl) return;
+
+  // Collect properties with GPS data
+  const withGPS = DB.filter(p => p.gps && p.gps.lat && p.gps.lng);
+  const statsEl = document.getElementById("mapStats");
+
+  if (withGPS.length === 0) {
+    if (!propertyMap) {
+      mapEl.innerHTML = '<div class="map-empty"><i class="fas fa-map-marked-alt"></i><p>Mapa se načte po stažení dat s GPS souřadnicemi</p></div>';
+    }
+    if (statsEl) statsEl.innerHTML = "";
+    return;
+  }
+
+  // Initialize map if not yet done
+  if (!propertyMap) {
+    mapEl.innerHTML = "";
+    propertyMap = L.map("propertiesMap", {
+      scrollWheelZoom: false,
+      zoomControl: true,
+    }).setView([49.8, 15.5], 7); // Center of Czech Republic
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18,
+    }).addTo(propertyMap);
+
+    // Enable scroll zoom only after click
+    propertyMap.on("click", function() { propertyMap.scrollWheelZoom.enable(); });
+    propertyMap.on("mouseout", function() { propertyMap.scrollWheelZoom.disable(); });
+  }
+
+  // Clear existing markers
+  if (mapMarkers) {
+    propertyMap.removeLayer(mapMarkers);
+  }
+  mapMarkers = L.markerClusterGroup ? L.markerClusterGroup() : L.layerGroup();
+
+  // Color-coded icons
+  function pinColor(p) {
+    if (p.type === "komerční") return "#f59e0b";
+    if (p.tx === "pronájem") return "#10b981";
+    return "#1a56db";
+  }
+
+  function createIcon(color) {
+    return L.divIcon({
+      className: "custom-map-pin",
+      html: `<svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="${color}"/>
+        <circle cx="14" cy="14" r="6" fill="white"/>
+      </svg>`,
+      iconSize: [28, 36],
+      iconAnchor: [14, 36],
+      popupAnchor: [0, -36],
+    });
+  }
+
+  let saleCount = 0, rentCount = 0, commCount = 0;
+
+  withGPS.forEach(p => {
+    if (p.type === "komerční") commCount++;
+    else if (p.tx === "pronájem") rentCount++;
+    else saleCount++;
+
+    const color = pinColor(p);
+    const icon = createIcon(color);
+    const imgSrc = p.imgs && p.imgs[0] ? p.imgs[0] : "";
+    const imgTag = imgSrc ? `<img src="${imgSrc}" alt="${escHtml(p.title)}" onerror="this.style.display='none'">` : "";
+    const priceStr = p.tx === "pronájem"
+      ? `${p.price ? p.price.toLocaleString("cs-CZ") : "?"} Kč/měs.`
+      : `${p.price ? p.price.toLocaleString("cs-CZ") : "?"} Kč`;
+    const feats = [
+      p.size ? `${p.size} m²` : null,
+      p.rooms ? `${p.rooms} pok.` : null,
+      p.disposition || null,
+    ].filter(Boolean).join(" • ");
+
+    const popup = `<div class="map-popup">
+      ${imgTag}
+      <h4>${escHtml(p.title)}</h4>
+      <div class="pop-loc"><i class="fas fa-map-marker-alt" style="color:${color};margin-right:3px"></i>${escHtml(p.addr)}</div>
+      <div class="pop-price">${priceStr}</div>
+      ${feats ? `<div class="pop-feat">${feats}</div>` : ""}
+      <div class="pop-btn" onclick="openModal('${p.id}')">Zobrazit detail</div>
+    </div>`;
+
+    const marker = L.marker([p.gps.lat, p.gps.lng], { icon })
+      .bindPopup(popup, { maxWidth: 260, minWidth: 200 });
+
+    mapMarkers.addLayer(marker);
+  });
+
+  propertyMap.addLayer(mapMarkers);
+
+  // Fit bounds if there are markers
+  if (withGPS.length > 0) {
+    const bounds = L.latLngBounds(withGPS.map(p => [p.gps.lat, p.gps.lng]));
+    propertyMap.fitBounds(bounds.pad(0.1), { maxZoom: 12 });
+  }
+
+  // Update stats
+  if (statsEl) {
+    const parts = [];
+    if (saleCount) parts.push(`<span><span class="dot dot-sale"></span> ${saleCount} prodej</span>`);
+    if (rentCount) parts.push(`<span><span class="dot dot-rent"></span> ${rentCount} pronájem</span>`);
+    if (commCount) parts.push(`<span><span class="dot dot-commercial"></span> ${commCount} komerční</span>`);
+    parts.push(`<span style="opacity:.6">(${withGPS.length} z ${DB.length} s GPS)</span>`);
+    statsEl.innerHTML = parts.join("");
+  }
+
+  // Invalidate map size in case it was hidden during init
+  setTimeout(() => { propertyMap.invalidateSize(); }, 300);
 }
 
 function showDataSourceBadge(updated, count) {
@@ -1577,8 +1741,22 @@ const urlP=new URLSearchParams(location.search).get("p");
 if(urlP&&DB.find(x=>x.id===urlP))setTimeout(()=>openModal(urlP),500);
 
 // ===== INIT =====
-renderProperties();animateCounters();updateFavBadge();
+renderProperties();animateCounters();updateFavBadge();renderMap();
 
 // Load live data after initial render (non-blocking)
 setTimeout(() => loadLiveData(), 500);
+
+// Fix Leaflet map size when scrolled into view
+const mapSection = document.getElementById("map");
+if (mapSection) {
+  const mapObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && propertyMap) {
+        propertyMap.invalidateSize();
+        mapObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  mapObs.observe(mapSection);
+}
 </script></body></html>
