@@ -5,7 +5,8 @@
 // =============================================================================
 
 const SREALITY_API = "https://www.sreality.cz/api/cs/v2/estates";
-const BEZREALITKY_API = "https://api.bezrealitky.cz/graphql";
+// Bezrealitky: uses their internal REST API (reverse-engineered from website)
+const BEZREALITKY_API = "https://www.bezrealitky.cz/api/record/markers";
 
 // ===== SREALITY MAPS =====
 const TYPE_MAP = { 1: "byt", 2: "dům", 3: "pozemek", 4: "komerční" };
@@ -270,15 +271,27 @@ function extractDetailAttributes(detail) {
     if (name === "lon" || name === "lng" || name === "longitude") attrs.lng = parseFloat(val) || null;
   }
 
-  // Description from text_data
+  // Description from text (Sreality has description in text.value)
   if (!attrs.description && detail.text) {
-    if (detail.text.value) attrs.description = detail.text.value;
+    if (typeof detail.text === "string") attrs.description = detail.text;
+    else if (detail.text.value) attrs.description = detail.text.value;
+  }
+
+  // Try meta_description as fallback
+  if (!attrs.description && detail.meta_description) {
+    attrs.description = detail.meta_description;
   }
 
   // GPS from map
-  if (!attrs.lat && detail.map && detail.map.lat) {
-    attrs.lat = detail.map.lat;
-    attrs.lng = detail.map.lon;
+  if (!attrs.lat && detail.map) {
+    if (detail.map.lat) { attrs.lat = detail.map.lat; attrs.lng = detail.map.lon || detail.map.lng; }
+    else if (detail.map.geo_lat) { attrs.lat = detail.map.geo_lat; attrs.lng = detail.map.geo_lng; }
+  }
+
+  // Recommendation fields from the detail
+  if (!attrs.description && detail.recommendations_data) {
+    const rec = detail.recommendations_data;
+    if (rec.description) attrs.description = rec.description;
   }
 
   return attrs;
@@ -460,203 +473,213 @@ function toSrealityProperty(estate) {
 }
 
 // ===== BEZREALITKY SCRAPER =====
+// Uses their website's internal search API
 async function fetchBezrealitky() {
-  const query = `
-    query AdvertList($input: AdvertListInput!) {
-      listAdverts(input: $input) {
-        list {
-          id
-          uri
-          type
-          offerType
-          mainCategory
-          subCategory
-          address
-          gps { lat lng }
-          mainImage { url }
-          images { url }
-          price
-          priceOriginal
-          currency
-          surface
-          surfaceLand
-          disposition
-          ownership
-          status
-          energy
-          floor
-          floorNumber
-          building
-          equipped
-          parking
-          balcony
-          terrace
-          cellar
-          elevator
-          garage
-          garden
-          loggia
-          description
-          note
-          createdAt
-          updatedAt
-          rooms
-          bathrooms
-          wc
-          heating
-          yearBuilt
-          yearReconstruction
-          availableFrom
-        }
-        totalCount
-      }
-    }
-  `;
-
   const allProperties = [];
-  const offerTypes = ["PRODEJ", "PRONAJEM"];
-  const categories = ["BYT", "DUM", "POZEMEK", "KOMERCNI"];
 
-  for (const offer of offerTypes) {
-    for (const cat of categories) {
+  // Bezrealitky offer types and categories
+  const searches = [
+    { offerType: "prodej", estateType: "byt", label: "Byty prodej" },
+    { offerType: "pronajem", estateType: "byt", label: "Byty pronájem" },
+    { offerType: "prodej", estateType: "dum", label: "Domy prodej" },
+    { offerType: "pronajem", estateType: "dum", label: "Domy pronájem" },
+    { offerType: "prodej", estateType: "pozemek", label: "Pozemky prodej" },
+    { offerType: "prodej", estateType: "komercni-prostor", label: "Komerční prodej" },
+    { offerType: "pronajem", estateType: "komercni-prostor", label: "Komerční pronájem" },
+  ];
+
+  for (const search of searches) {
+    for (let page = 1; page <= 3; page++) { // Max 3 pages per category
       try {
-        const resp = await fetch(BEZREALITKY_API, {
-          method: "POST",
+        // Try their internal listing API (SSR data endpoint)
+        const url = `https://www.bezrealitky.cz/api/record/markers?offerType=${search.offerType}&estateType=${search.estateType}&page=${page}&limit=20&osm_value=R51684`;
+        const resp = await fetch(url, {
           headers: {
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             Accept: "application/json",
+            Referer: "https://www.bezrealitky.cz/",
           },
-          signal: AbortSignal.timeout(10000),
-          body: JSON.stringify({
-            query,
-            variables: {
-              input: {
-                offerType: offer,
-                mainCategory: cat,
-                page: 1,
-                limit: 50,
-                order: "TIME_ORDER_DESC",
-                regionOsmIds: [],
-              }
-            }
-          }),
+          signal: AbortSignal.timeout(8000),
         });
 
-        if (!resp.ok) continue;
-        const data = await resp.json();
-        const adverts = data?.data?.listAdverts?.list || [];
+        if (!resp.ok) {
+          console.log(`[BydlímTu] Bezrealitky ${search.label} page ${page}: HTTP ${resp.status}`);
+          break;
+        }
 
-        for (const ad of adverts) {
-          const p = toBezrealitkyProperty(ad, offer, cat);
+        const data = await resp.json();
+
+        // Handle various response formats
+        let records = [];
+        if (Array.isArray(data)) {
+          records = data;
+        } else if (data.records) {
+          records = data.records;
+        } else if (data.data) {
+          records = Array.isArray(data.data) ? data.data : [];
+        } else if (data.results) {
+          records = data.results;
+        }
+
+        if (!records.length) break;
+
+        for (const record of records) {
+          const p = toBezrealitkyProperty(record, search.offerType, search.estateType);
           if (p) allProperties.push(p);
         }
 
-        // Delay between requests
-        await new Promise(r => setTimeout(r, 300));
+        console.log(`[BydlímTu] Bezrealitky ${search.label} page ${page}: ${records.length} records`);
+        if (records.length < 20) break; // Last page
+
+        await new Promise(r => setTimeout(r, 400));
       } catch (err) {
-        console.log(`[BydlímTu] Bezrealitky ${offer}/${cat} failed:`, err.message);
+        console.log(`[BydlímTu] Bezrealitky ${search.label} page ${page} failed:`, err.message);
+        break;
       }
     }
   }
 
-  console.log(`[BydlímTu] Fetched ${allProperties.length} from Bezrealitky.cz`);
-  return allProperties;
+  // Deduplicate
+  const seen = new Set();
+  const unique = allProperties.filter(p => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+
+  console.log(`[BydlímTu] Fetched ${unique.length} from Bezrealitky.cz`);
+  return unique;
 }
 
-function toBezrealitkyProperty(ad, offerType, mainCat) {
-  if (!ad || !ad.id) return null;
+function toBezrealitkyProperty(ad, offerType, estateType) {
+  // Handle various ID formats
+  const id = ad.id || ad.hashId || ad.uri;
+  if (!id) return null;
 
-  const typeMap = { BYT: "byt", DUM: "dům", POZEMEK: "pozemek", KOMERCNI: "komerční" };
-  const txMap = { PRODEJ: "prodej", PRONAJEM: "pronájem" };
+  const typeMap = {
+    byt: "byt", dum: "dům", pozemek: "pozemek",
+    "komercni-prostor": "komerční", komercni: "komerční",
+  };
+  const txMap = { prodej: "prodej", pronajem: "pronájem" };
 
-  const type = typeMap[mainCat] || "byt";
+  const type = typeMap[estateType] || "byt";
   const tx = txMap[offerType] || "prodej";
 
-  // Images
+  // Images — handle various formats
   const imgs = [];
-  if (ad.images && ad.images.length) {
+  if (ad.images && Array.isArray(ad.images)) {
     for (const img of ad.images.slice(0, 12)) {
-      if (img.url) imgs.push(img.url);
+      const url = typeof img === "string" ? img : (img.url || img.src || img.href);
+      if (url) imgs.push(url.startsWith("//") ? "https:" + url : url);
     }
-  } else if (ad.mainImage && ad.mainImage.url) {
-    imgs.push(ad.mainImage.url);
+  }
+  if (!imgs.length && ad.mainImage) {
+    const url = typeof ad.mainImage === "string" ? ad.mainImage : (ad.mainImage.url || ad.mainImage.src);
+    if (url) imgs.push(url.startsWith("//") ? "https:" + url : url);
+  }
+  if (!imgs.length && ad.image) {
+    const url = typeof ad.image === "string" ? ad.image : (ad.image.url || ad.image.src);
+    if (url) imgs.push(url.startsWith("//") ? "https:" + url : url);
   }
   if (!imgs.length) imgs.push("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600");
 
-  // Disposition / rooms
-  const disposition = ad.disposition || "";
-  let rooms = ad.rooms || 0;
+  // Disposition / rooms — handle various field names
+  const disposition = ad.disposition || ad.layout || ad.dispozice || "";
+  let rooms = ad.rooms || ad.roomCount || 0;
   if (!rooms && disposition) {
     const m = disposition.match(/(\d)/);
     if (m) rooms = parseInt(m[1]);
   }
 
-  // Size
-  const size = ad.surface || ad.surfaceLand || 0;
+  // Size — various field names
+  const size = ad.surface || ad.surfaceLand || ad.area || ad.plocha || ad.usableArea || 0;
 
-  // Address / locality
-  const addr = ad.address || "";
+  // Address — various field names
+  const addr = ad.address || ad.locality || ad.location || ad.adresa || "";
   const loc = extractCity(addr);
+
+  // Price
+  const price = ad.price || ad.priceCzk || ad.totalPrice || 1;
 
   // Badges
   const badges = [];
-  const created = ad.createdAt ? new Date(ad.createdAt) : null;
-  if (created && (Date.now() - created.getTime()) < 7 * 24 * 60 * 60 * 1000) badges.push("new");
-  if (ad.priceOriginal && ad.price < ad.priceOriginal) badges.push("price");
+  const created = ad.createdAt || ad.publishedAt || ad.dateCreated;
+  const createdDate = created ? new Date(created) : null;
+  if (createdDate && !isNaN(createdDate) && (Date.now() - createdDate.getTime()) < 7 * 24 * 60 * 60 * 1000) badges.push("new");
+  if (ad.priceOriginal && price < ad.priceOriginal) badges.push("price");
 
   // Days since added
   let added = null;
-  if (created) {
-    added = Math.floor((Date.now() - created.getTime()) / (24 * 60 * 60 * 1000));
+  if (createdDate && !isNaN(createdDate)) {
+    added = Math.floor((Date.now() - createdDate.getTime()) / (24 * 60 * 60 * 1000));
   }
 
   // Energy class
   let energy = null;
-  if (ad.energy) {
-    const ec = String(ad.energy).toUpperCase().replace(/[^A-G]/g, "");
-    if (ec.length === 1) energy = ec;
+  if (ad.energy || ad.energyClass || ad.penb) {
+    const ec = String(ad.energy || ad.energyClass || ad.penb).toUpperCase().replace(/[^A-G]/g, "");
+    if (ec.length >= 1) energy = ec[0];
+  }
+
+  // GPS — handle various formats
+  let gps = null;
+  if (ad.gps && ad.gps.lat) {
+    gps = { lat: ad.gps.lat, lng: ad.gps.lng || ad.gps.lon };
+  } else if (ad.lat && ad.lng) {
+    gps = { lat: ad.lat, lng: ad.lng };
+  } else if (ad.latitude && ad.longitude) {
+    gps = { lat: ad.latitude, lng: ad.longitude };
+  }
+
+  // URL
+  let sourceUrl;
+  if (ad.uri) {
+    sourceUrl = ad.uri.startsWith("http") ? ad.uri : `https://www.bezrealitky.cz${ad.uri}`;
+  } else if (ad.url) {
+    sourceUrl = ad.url.startsWith("http") ? ad.url : `https://www.bezrealitky.cz${ad.url}`;
+  } else {
+    sourceUrl = `https://www.bezrealitky.cz/nemovitosti-byty-domy/${id}`;
   }
 
   return {
-    id: `BR-${ad.id}`,
-    hashId: ad.id,
+    id: `BR-${id}`,
+    hashId: String(id),
     type,
     tx,
     disposition: disposition || null,
     title: buildBezrealitkyTitle(type, disposition, size, addr),
     loc,
     addr,
-    price: ad.price || 1,
+    price,
     priceNote: null,
     size,
     rooms,
-    bath: ad.bathrooms || null,
-    floor: ad.floor || null,
-    floors: ad.floorNumber || null,
+    bath: ad.bathrooms || ad.bathroom || null,
+    floor: ad.floor || ad.podlazi || null,
+    floors: ad.floorNumber || ad.floorsCount || ad.podlazi_pocet || null,
     imgs,
     badges,
-    desc: ad.description || ad.note || null,
+    desc: ad.description || ad.note || ad.popis || null,
     amenities: buildBezrealitkyAmenities(ad),
     energy,
-    avail: ad.availableFrom || null,
-    built: ad.yearBuilt || null,
-    recon: ad.yearReconstruction || null,
-    material: ad.building || null,
-    ownership: ad.ownership || null,
-    condition: ad.status || null,
-    furnished: ad.equipped || null,
-    elevator: ad.elevator || null,
-    balcony: ad.balcony || null,
-    terrace: ad.terrace || null,
-    cellar: ad.cellar || null,
-    garage: ad.garage || null,
-    parking: ad.parking || null,
-    garden: ad.garden || null,
-    heating: ad.heating || null,
-    gps: ad.gps ? { lat: ad.gps.lat, lng: ad.gps.lng } : null,
+    avail: ad.availableFrom || ad.volneOd || null,
+    built: ad.yearBuilt || ad.rokVystavby || null,
+    recon: ad.yearReconstruction || ad.rokRekonstrukce || null,
+    material: ad.building || ad.material || ad.konstrukce || null,
+    ownership: ad.ownership || ad.vlastnictvi || null,
+    condition: ad.status || ad.stav || null,
+    furnished: ad.equipped || ad.vybaveni || null,
+    elevator: ad.elevator || ad.vytah || null,
+    balcony: ad.balcony || ad.balkon || null,
+    terrace: ad.terrace || ad.terasa || null,
+    cellar: ad.cellar || ad.sklep || null,
+    garage: ad.garage || ad.garaz || null,
+    parking: ad.parking || ad.parkovani || null,
+    garden: ad.garden || ad.zahrada || null,
+    heating: ad.heating || ad.topeni || null,
+    gps,
     source: "bezrealitky.cz",
-    sourceUrl: ad.uri ? `https://www.bezrealitky.cz${ad.uri}` : `https://www.bezrealitky.cz/nemovitosti-byty-domy/${ad.id}`,
+    sourceUrl,
     added,
   };
 }

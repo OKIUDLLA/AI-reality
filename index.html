@@ -354,7 +354,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <h1>Najděte svůj <span>vysněný domov</span> s&nbsp;AI&nbsp;asistentem</h1>
 <p>BydlímTu Reality využívá umělou inteligenci, která vám pomůže najít ideální nemovitost 24/7. Ušetřete čas a získejte personalizované doporučení.</p>
 <div class="hero-stats">
-<div class="hero-stat"><div class="num">1 247</div><div class="label">Nemovitostí</div></div>
+<div class="hero-stat"><div class="num" id="heroCountNum">2 700+</div><div class="label">Nemovitostí</div></div>
 <div class="hero-stat"><div class="num">+25%</div><div class="label">Konverze</div></div>
 <div class="hero-stat"><div class="num">24/7</div><div class="label">AI podpora</div></div>
 <div class="hero-stat"><div class="num">98%</div><div class="label">Spokojenost</div></div>
@@ -397,6 +397,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 <button class="filter-tab" data-filter="komerční">Komerční</button>
 <button class="filter-tab" data-filter="pozemek">Pozemky</button>
 </div>
+<select class="sort-select" id="sourceSelect" style="font-size:.8rem"><option value="">Všechny portály</option><option value="sreality.cz">Sreality.cz</option><option value="bezrealitky.cz">Bezrealitky.cz</option></select>
 <select class="sort-select" id="sortSelect"><option value="newest">Nejnovější</option><option value="price-asc">Cena ↑</option><option value="price-desc">Cena ↓</option><option value="size-desc">Plocha ↓</option></select>
 </div>
 </div>
@@ -665,11 +666,11 @@ async function loadLiveData() {
       DB.forEach(p => { if (!viewerCounts[p.id]) viewerCounts[p.id] = 0; });
 
       // Update stats counter with real count
-      const countEl = document.querySelector('[data-target="1247"]');
+      const countEl = document.querySelector('.stat-num[data-target]');
       if (countEl) { countEl.dataset.target = TOTAL_ON_SERVER; countEl.textContent = fmt(TOTAL_ON_SERVER); }
       // Update hero stat text too
-      const heroStat = document.querySelector('.hero-stat .num');
-      if (heroStat && heroStat.textContent.includes('1')) heroStat.textContent = fmt(TOTAL_ON_SERVER);
+      const heroCountNum = document.getElementById('heroCountNum');
+      if (heroCountNum) heroCountNum.textContent = fmt(TOTAL_ON_SERVER);
 
       // Show live badge
       showDataSourceBadge(propData.updated, TOTAL_ON_SERVER);
@@ -828,7 +829,7 @@ DB.forEach(p => viewerCounts[p.id] = Math.floor(Math.random()*8)+1);
 function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g," ")}
 function fmtPrice(p,tx){return tx==="pronájem"?fmt(p)+" Kč/měs.":fmt(p)+" Kč"}
 function priceM2(p){return p.size>0?fmt(Math.round(p.price/p.size))+" Kč/m²":""}
-function timeAgo(days){if(days===0)return"Právě přidáno";if(days===1)return"Včera";if(days<7)return"Před "+days+" dny";return"Před "+Math.floor(days/7)+" týdny"}
+function timeAgo(days){if(days===null||days===undefined)return"";if(days===0)return"Právě přidáno";if(days===1)return"Včera";if(days<7)return"Před "+days+" dny";if(days<30)return"Před "+Math.floor(days/7)+" týdny";return"Před "+Math.floor(days/30)+" měsíci"}
 function timeNow(){const d=new Date();return d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")}
 function greeting(){const h=new Date().getHours();if(h<12)return"Dobré ráno";if(h<18)return"Dobrý den";return"Dobrý večer"}
 function formatPriceInput(el){let v=el.value.replace(/\D/g,"");el.value=v?fmt(parseInt(v)):""}
@@ -849,11 +850,13 @@ function getFiltered(){
   if(hpf>0) r=r.filter(p=>p.price>=hpf);
   if(hpt<Infinity) r=r.filter(p=>p.price<=hpt);
   if(htx) r=r.filter(p=>p.tx===htx);
+  const srcFilter=document.getElementById("sourceSelect").value;
+  if(srcFilter) r=r.filter(p=>p.source===srcFilter);
   switch(currentSort){
     case"price-asc":r.sort((a,b)=>a.price-b.price);break;
     case"price-desc":r.sort((a,b)=>b.price-a.price);break;
     case"size-desc":r.sort((a,b)=>b.size-a.size);break;
-    default:r.sort((a,b)=>a.added-b.added);
+    default:r.sort((a,b)=>(a.added??999)-(b.added??999));
   }
   return r;
 }
@@ -935,6 +938,7 @@ document.getElementById("filterTabs").addEventListener("click",e=>{
   renderProperties(true);
 });
 document.getElementById("sortSelect").addEventListener("change",()=>{currentSort=document.getElementById("sortSelect").value;renderProperties()});
+document.getElementById("sourceSelect").addEventListener("change",()=>renderProperties(true));
 document.getElementById("heroSearchForm").addEventListener("submit",e=>{
   e.preventDefault();currentFilter="all";
   document.querySelectorAll(".filter-tab").forEach(t=>t.classList.remove("active"));
