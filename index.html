@@ -24,6 +24,10 @@
 {"@context":"https://schema.org","@type":"RealEstateAgent","name":"BydlímTu Reality","description":"AI asistent pro vyhledávání nemovitostí v ČR. Tisíce reálných nabídek ze Sreality.cz a Bezrealitky.cz.","url":"https://bydlimtu.netlify.app","areaServed":{"@type":"Country","name":"CZ"},"knowsLanguage":"cs","contactPoint":{"@type":"ContactPoint","telephone":"+420-123-456-789","contactType":"customer service","availableLanguage":"cs"}}
 </script>
 <meta name="theme-color" content="#1a56db">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BydlímTu">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -362,7 +366,8 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 @media(max-width:1024px){.features-grid{grid-template-columns:repeat(2,1fr)}.calc-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
 .hero .container{grid-template-columns:1fr;gap:24px}.hero h1{font-size:2rem}.hero-stats{gap:16px;flex-wrap:wrap}
-.nav-links{display:none}.mobile-toggle{display:block}
+.nav-links{display:none;flex-direction:column;position:absolute;top:70px;left:0;right:0;background:rgba(255,255,255,.99);backdrop-filter:blur(12px);padding:16px 20px;box-shadow:var(--shadow-lg);z-index:999;gap:4px;border-bottom:2px solid var(--primary);animation:slideDown .2s ease-out}.nav-links.mobile-open{display:flex}.nav-links a{padding:12px 16px;border-radius:var(--radius-sm)}.nav-links a:hover{background:var(--primary-light)}.nav-cta{text-align:center;margin-top:4px}.mobile-toggle{display:block}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .properties-grid{grid-template-columns:1fr}.features-grid{grid-template-columns:1fr}
 .stats-grid{grid-template-columns:repeat(2,1fr)}.testimonials-grid{grid-template-columns:1fr}
 .contact-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}
@@ -1852,11 +1857,25 @@ window.addEventListener("scroll",()=>{
 
 // ===== NAV =====
 document.querySelectorAll('.nav-links a[href^="#"]').forEach(a=>{
-  a.addEventListener("click",e=>{e.preventDefault();const t=document.querySelector(a.getAttribute("href"));if(t)t.scrollIntoView({behavior:"smooth"});
-    if(window.innerWidth<=768)document.getElementById("navLinks").style.display="none"});
+  a.addEventListener("click",e=>{e.preventDefault();const t=document.querySelector(a.getAttribute("href"));if(t)t.scrollIntoView({behavior:"smooth"})});
 });
-function toggleMobileNav(){const l=document.getElementById("navLinks");l.style.display=l.style.display==="flex"?"none":"flex";
-  if(l.style.display==="flex"){l.style.cssText="display:flex;flex-direction:column;position:absolute;top:70px;left:0;right:0;background:#fff;padding:20px;box-shadow:0 10px 15px rgba(0,0,0,.1);z-index:999"}}
+function toggleMobileNav(){
+  const l=document.getElementById("navLinks");
+  const btn=document.querySelector(".mobile-toggle i");
+  l.classList.toggle("mobile-open");
+  l.style.display="";
+  const isOpen=l.classList.contains("mobile-open");
+  btn.className=isOpen?"fas fa-times":"fas fa-bars";
+  document.querySelector(".mobile-toggle").setAttribute("aria-expanded",isOpen);
+}
+// Close mobile nav when clicking a link
+document.getElementById("navLinks").addEventListener("click",e=>{
+  if(e.target.matches("a")&&window.innerWidth<=768){
+    document.getElementById("navLinks").classList.remove("mobile-open");
+    document.querySelector(".mobile-toggle i").className="fas fa-bars";
+    document.querySelector(".mobile-toggle").setAttribute("aria-expanded","false");
+  }
+});
 
 // ===== COUNTERS =====
 function animateCounters(){
@@ -1894,4 +1913,31 @@ if (mapSection) {
   }, { threshold: 0.1 });
   mapObs.observe(mapSection);
 }
+
+// ===== OFFLINE / ONLINE DETECTION =====
+function showOfflineBanner(show) {
+  let banner = document.getElementById("offlineBanner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "offlineBanner";
+    banner.setAttribute("role","alert");
+    banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;text-align:center;padding:10px 16px;font-size:.9rem;font-weight:600;transform:translateY(-100%);transition:transform .3s ease";
+    banner.innerHTML = '<i class="fas fa-wifi" style="margin-right:6px;opacity:.7"></i> Jste offline — některé funkce nemusí fungovat';
+    document.body.prepend(banner);
+  }
+  banner.style.transform = show ? "translateY(0)" : "translateY(-100%)";
+}
+window.addEventListener("offline", () => showOfflineBanner(true));
+window.addEventListener("online", () => { showOfflineBanner(false); loadLiveData(); });
+if (!navigator.onLine) showOfflineBanner(true);
+
+// ===== GLOBAL ERROR HANDLER =====
+window.addEventListener("error", e => {
+  if (e.message && e.message.includes("Script error")) return; // Ignore cross-origin errors
+  console.error("[BydlímTu] Global error:", e.message, e.filename, e.lineno);
+});
+window.addEventListener("unhandledrejection", e => {
+  console.error("[BydlímTu] Unhandled promise rejection:", e.reason);
+  e.preventDefault(); // Prevent noisy console errors
+});
 </script></body></html>
