@@ -50,7 +50,7 @@
     # Legacy XSS protection (for older browsers)
     X-XSS-Protection = "1; mode=block"
     # Content Security Policy — allow our domains + CDNs we use
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://*.sdn.cz https://*.sreality.cz https://*.bezrealitky.cz https://*.bezrealitky.com https://images.unsplash.com https://*.tile.openstreetmap.org blob:; connect-src 'self' https://bydlimtu.netlify.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://*.sdn.cz https://*.sreality.cz https://*.bezrealitky.cz https://*.bezrealitky.com https://images.unsplash.com https://*.tile.openstreetmap.org blob:; connect-src 'self' https://bydlimtu.netlify.app https://*.tile.openstreetmap.org https://fonts.googleapis.com https://fonts.gstatic.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
     # Cross-Origin policies
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Resource-Policy = "same-origin"

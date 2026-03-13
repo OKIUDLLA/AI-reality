@@ -855,6 +855,13 @@ function renderMap() {
   const mapEl = document.getElementById("propertiesMap");
   if (!mapEl) return;
 
+  // Wait for Leaflet to load (defer script)
+  if (typeof L === "undefined") {
+    mapEl.innerHTML = '<div class="map-empty"><i class="fas fa-spinner fa-spin"></i><p>Načítám mapu…</p></div>';
+    window.addEventListener("load", () => renderMap(), { once: true });
+    return;
+  }
+
   // Collect properties with GPS data
   const withGPS = DB.filter(p => p.gps && p.gps.lat && p.gps.lng);
   const statsEl = document.getElementById("mapStats");
@@ -876,7 +883,7 @@ function renderMap() {
     }).setView([49.8, 15.5], 7); // Center of Czech Republic
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">OpenStreetMap</a>',
       maxZoom: 18,
     }).addTo(propertyMap);
 
@@ -1122,16 +1129,16 @@ function renderProperties(reset){
     const disp = p.disposition ? ` ${p.disposition}` : "";
     const addedText = p.added !== null && p.added !== undefined ? timeAgo(p.added) : "";
     return `
-    <div class="property-card" onclick="openModal('${p.id}')" style="animation-delay:${Math.min(i,8)*60}ms;transform:translateY(10px)" role="article" aria-label="${p.title}">
-      <div class="property-img" data-bg="${p.imgs[0]}" style="${i<6?`background-image:url('${p.imgs[0]}')`:''}" role="img" aria-label="Foto ${p.title}">
+    <div class="property-card" onclick="openModal('${p.id}')" style="animation-delay:${Math.min(i,8)*60}ms;transform:translateY(10px)" role="article" aria-label="${escHtml(p.title)}">
+      <div class="property-img" data-bg="${p.imgs[0]}" style="${i<6?`background-image:url('${p.imgs[0]}')`:''}" role="img" aria-label="Foto ${escHtml(p.title)}">
         <div class="badges">${p.badges.map(b=>b==="new"?'<span class="badge badge-new">Novinka</span>':b==="hot"?'<span class="badge badge-hot">Top</span>':'<span class="badge badge-price">Zlevněno</span>').join("")}</div>
         <button class="fav-btn ${favorites.has(p.id)?"active":""}" onclick="event.stopPropagation();toggleFav('${p.id}')" aria-label="Oblíbené"><i class="fa${favorites.has(p.id)?"s":"r"} fa-heart"></i></button>
         <div class="img-count"><i class="fas fa-camera"></i> ${p.imgs.length}</div>
       </div>
       <div class="property-body">
-        <div class="property-type">${p.type}${disp} • ${p.tx}</div>
-        <div class="property-title">${p.title}</div>
-        <div class="property-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${p.addr}</div>
+        <div class="property-type">${escHtml(p.type)}${escHtml(disp)} • ${escHtml(p.tx)}</div>
+        <div class="property-title">${escHtml(p.title)}</div>
+        <div class="property-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${escHtml(p.addr)}</div>
         <div class="property-features">
           ${p.size?`<span class="property-feat"><i class="fas fa-ruler-combined"></i>${p.size} m²</span>`:""}
           ${p.rooms?`<span class="property-feat"><i class="fas fa-door-open"></i>${p.rooms} pok.</span>`:""}
@@ -1237,9 +1244,9 @@ function openModal(id){
     </div>
     <div class="modal-body">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-        <div><div class="property-type" style="margin-bottom:6px">${p.type}${disp} • ${p.tx}</div>
-        <div class="modal-title">${p.title}</div>
-        <div class="modal-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${p.addr}</div></div>
+        <div><div class="property-type" style="margin-bottom:6px">${escHtml(p.type)}${escHtml(disp)} • ${escHtml(p.tx)}</div>
+        <div class="modal-title">${escHtml(p.title)}</div>
+        <div class="modal-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${escHtml(p.addr)}</div></div>
         <div style="text-align:right"><div class="modal-price">${fmtPrice(p.price,p.tx)}</div>${p.size?`<div class="modal-price m2">${priceM2(p)}</div>`:""}<div class="modal-id">ID: ${p.id} · <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" style="color:var(--primary);font-size:.7rem"><i class="fas fa-external-link-alt"></i> ${sourceName}</a></div></div>
       </div>
       <div class="modal-features" id="modalFeatures">
@@ -1247,10 +1254,10 @@ function openModal(id){
       </div>
       <div class="modal-desc" id="modalDesc">
         <h4>Popis</h4>
-        ${p.desc ? `<p>${p.desc}</p>` : '<p style="color:var(--text-lighter);font-style:italic" id="descLoading"><i class="fas fa-spinner fa-spin"></i> Načítám podrobný popis...</p>'}
+        ${p.desc ? `<p>${escHtml(p.desc).replace(/\n/g,"<br>")}</p>` : '<p style="color:var(--text-lighter);font-style:italic" id="descLoading"><i class="fas fa-spinner fa-spin"></i> Načítám podrobný popis...</p>'}
       </div>
       ${p.amenities && p.amenities.length ? `<h4 style="margin-bottom:8px">Vlastnosti a vybavení</h4>
-      <div class="modal-amenities" id="modalAmenities">${p.amenities.map(a=>`<span class="amenity-tag">${a}</span>`).join("")}</div>` : '<div id="modalAmenities"></div>'}
+      <div class="modal-amenities" id="modalAmenities">${p.amenities.map(a=>`<span class="amenity-tag">${escHtml(a)}</span>`).join("")}</div>` : '<div id="modalAmenities"></div>'}
       <div id="modalExtraInfo"></div>
       <div class="modal-actions">
         <button class="btn-ghost" onclick="shareProperty('${p.id}')"><i class="fas fa-share-alt"></i> Sdílet</button>
@@ -1379,9 +1386,9 @@ async function fetchPropertyDetail(id) {
       // Update description
       const descEl = document.getElementById("modalDesc");
       if (descEl && p.desc) {
-        descEl.innerHTML = `<h4>Popis</h4><p>${p.desc.replace(/\n/g,"<br>")}</p>`;
+        descEl.innerHTML = `<h4>Popis</h4><p>${escHtml(p.desc).replace(/\n/g,"<br>")}</p>`;
       } else if (descEl && !p.desc) {
-        descEl.innerHTML = `<h4>Popis</h4><p style="color:var(--text-lighter)">${p.title}. ${p.addr}.</p>`;
+        descEl.innerHTML = `<h4>Popis</h4><p style="color:var(--text-lighter)">${escHtml(p.title)}. ${escHtml(p.addr)}.</p>`;
       }
       // Update features
       const featEl = document.getElementById("modalFeatures");
@@ -1389,7 +1396,7 @@ async function fetchPropertyDetail(id) {
       // Update amenities
       const amenEl = document.getElementById("modalAmenities");
       if (amenEl && p.amenities.length) {
-        amenEl.innerHTML = p.amenities.map(a=>`<span class="amenity-tag">${a}</span>`).join("");
+        amenEl.innerHTML = p.amenities.map(a=>`<span class="amenity-tag">${escHtml(a)}</span>`).join("");
         // Ensure header exists
         if (!amenEl.previousElementSibling || amenEl.previousElementSibling.tagName !== "H4") {
           amenEl.insertAdjacentHTML("beforebegin", '<h4 style="margin-bottom:8px">Vlastnosti a vybavení</h4>');
