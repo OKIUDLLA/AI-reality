@@ -14,8 +14,13 @@ export async function handler(event) {
     };
   }
 
-  // Only allow Sreality CDN domains
-  const allowed = ["d18-a.sdn.cz", "d18-b.sdn.cz", "d18-c.sdn.cz", "d18.sdn.cz"];
+  // Only allow known reality CDN domains
+  const allowedPatterns = [
+    ".sdn.cz",         // Sreality CDN
+    ".bezrealitky.cz",  // Bezrealitky
+    ".bezrealitky.com",
+    ".sreality.cz",
+  ];
   let parsed;
   try {
     parsed = new URL(url);
@@ -27,7 +32,7 @@ export async function handler(event) {
     };
   }
 
-  if (!allowed.some((d) => parsed.hostname === d || parsed.hostname.endsWith(".sdn.cz"))) {
+  if (!allowedPatterns.some(p => parsed.hostname.endsWith(p))) {
     return {
       statusCode: 403,
       headers: { "Content-Type": "text/plain" },

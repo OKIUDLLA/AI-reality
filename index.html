@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="BydlímTu Reality — AI asistent pro nemovitosti v ČR. Byty, domy, komerční prostory 24/7.">
 <meta property="og:title" content="BydlímTu Reality — AI asistent pro nemovitosti">
-<meta property="og:description" content="Najděte vysněný domov s AI asistentem. 2600+ reálných nemovitostí z celého českého trhu.">
+<meta property="og:description" content="Najděte vysněný domov s AI asistentem. Tisíce reálných nemovitostí ze Sreality.cz a Bezrealitky.cz.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='0' y='28' font-size='32'>🏠</text></svg>">
 <title>BydlímTu Reality — Váš AI asistent pro nemovitosti</title>
@@ -380,7 +380,7 @@ input,select,textarea{font-family:inherit;font-size:1rem}
 </section>
 
 <!-- PROPERTIES -->
-<section class="properties-section" id="properties" role="main" id="main">
+<section class="properties-section" id="properties" role="main">
 <div class="container">
 <div id="dataFreshness" class="data-freshness" style="display:none">
 <span class="live-dot" style="width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
@@ -626,9 +626,11 @@ DB = [...FALLBACK_DB];
 
 // ===== LIVE DATA LOADER =====
 // Smart data loader: tries Netlify Functions API first, then static JSON, then fallback DB
-let TOTAL_ON_SERVER = 0;  // Total properties available on Sreality
+let TOTAL_ON_SERVER = 0;  // Total properties available across all portals
 let API_AVAILABLE = false; // Whether Netlify API is available
 let CURRENT_API_PAGE = 1;
+let DATA_SOURCES = [];     // Active data sources
+let SOURCE_STATS = {};     // Per-source counts
 
 async function tryFetch(urls) {
   for (const url of urls) {
@@ -655,12 +657,12 @@ async function loadLiveData() {
       TOTAL_ON_SERVER = propData.totalAll || propData.count || DB.length;
       API_AVAILABLE = !!propData.totalAll;
       CURRENT_API_PAGE = 1;
-      console.log(`[BydlímTu] Načteno ${DB.length} nemovitostí (celkem na serveru: ${TOTAL_ON_SERVER})`);
+      DATA_SOURCES = propData.sources || ["sreality.cz"];
+      SOURCE_STATS = propData.sourceStats || {};
+      console.log(`[BydlímTu] Načteno ${DB.length} nemovitostí (celkem na serveru: ${TOTAL_ON_SERVER}), zdroje: ${DATA_SOURCES.join(", ")}`);
 
-      // Update viewer counts for new IDs
-      DB.forEach(p => {
-        if (!viewerCounts[p.id]) viewerCounts[p.id] = Math.floor(Math.random() * 8) + 1;
-      });
+      // Track property IDs
+      DB.forEach(p => { if (!viewerCounts[p.id]) viewerCounts[p.id] = 0; });
 
       // Update stats counter with real count
       const countEl = document.querySelector('[data-target="1247"]');
@@ -674,7 +676,8 @@ async function loadLiveData() {
 
       // Update subtitle
       const sub = document.getElementById("propertiesSubtitle");
-      if(sub) sub.textContent = `${TOTAL_ON_SERVER.toLocaleString("cs-CZ")} reálných nemovitostí z portálu Sreality.cz — aktualizováno průběžně`;
+      const sourceLabel = DATA_SOURCES.length > 1 ? DATA_SOURCES.join(" + ") : "Sreality.cz";
+      if(sub) sub.textContent = `${TOTAL_ON_SERVER.toLocaleString("cs-CZ")} reálných nemovitostí z ${sourceLabel} — aktualizováno průběžně`;
 
       // Show freshness indicator
       updateFreshnessBar(propData.updated, propData.source);
@@ -749,7 +752,8 @@ function showDataSourceBadge(updated, count) {
   badge.className = "data-source-badge";
   const date = new Date(updated);
   const timeStr = date.toLocaleString("cs-CZ", {day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
-  badge.innerHTML = `<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:#10b981;animation:livePulse 2s infinite;display:inline-block"></span> Živá data ze Sreality.cz · ${count} nemovitostí · Aktualizace: ${timeStr}`;
+  const sourceLabel = DATA_SOURCES.length > 1 ? DATA_SOURCES.join(" + ") : "Sreality.cz";
+  badge.innerHTML = `<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:#10b981;animation:livePulse 2s infinite;display:inline-block"></span> Živá data z ${sourceLabel} · ${count} nemovitostí · Aktualizace: ${timeStr}`;
   badge.style.cssText = "position:fixed;bottom:12px;left:12px;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);padding:8px 14px;border-radius:8px;font-size:.72rem;color:#374151;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:998;display:flex;align-items:center;gap:6px;border:1px solid #e5e7eb";
   document.body.appendChild(badge);
   // Auto-hide after 8s
@@ -782,9 +786,10 @@ function updateFreshnessBar(updated, source) {
   const timeStr = updatedDate.toLocaleString("cs-CZ", {day:"numeric", month:"numeric", hour:"2-digit", minute:"2-digit"});
 
   let freshness, label;
+  const sourceLabel = DATA_SOURCES.length > 1 ? DATA_SOURCES.join(" + ") : (source || "Sreality.cz");
   if (diffMin < 120) {
     freshness = "fresh";
-    label = `${DB.length} nemovitostí ze ${source || "Sreality.cz"} · Aktualizace: ${timeStr} (před ${diffMin} min)`;
+    label = `${DB.length} nemovitostí z ${sourceLabel} · Aktualizace: ${timeStr} (před ${diffMin} min)`;
   } else if (diffMin < 1440) {
     freshness = "stale";
     const hours = Math.round(diffMin / 60);
@@ -864,31 +869,36 @@ function renderProperties(reset){
     grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><h3>Žádné nemovitosti</h3><p>Zkuste upravit filtry nebo vyhledávací kritéria.</p></div>`;
     document.getElementById("loadMoreWrap").style.display="none";return;
   }
-  grid.innerHTML=show.map((p,i)=>`
+  grid.innerHTML=show.map((p,i)=>{
+    const sourceName = p.source === "bezrealitky.cz" ? "Bezrealitky" : "Sreality";
+    const sourceIcon = p.source === "bezrealitky.cz" ? "fa-home" : "fa-external-link-alt";
+    const disp = p.disposition ? ` ${p.disposition}` : "";
+    const addedText = p.added !== null && p.added !== undefined ? timeAgo(p.added) : "";
+    return `
     <div class="property-card" onclick="openModal('${p.id}')" style="animation-delay:${Math.min(i,8)*60}ms;transform:translateY(10px)" role="article" aria-label="${p.title}">
       <div class="property-img" data-bg="${p.imgs[0]}" style="${i<6?`background-image:url('${p.imgs[0]}')`:''}" role="img" aria-label="Foto ${p.title}">
-        <div class="badges">${p.badges.map(b=>b==="new"?'<span class="badge badge-new">Novinka</span>':b==="hot"?'<span class="badge badge-hot">Top</span>':'<span class="badge badge-price">Akce</span>').join("")}</div>
+        <div class="badges">${p.badges.map(b=>b==="new"?'<span class="badge badge-new">Novinka</span>':b==="hot"?'<span class="badge badge-hot">Top</span>':'<span class="badge badge-price">Zlevněno</span>').join("")}</div>
         <button class="fav-btn ${favorites.has(p.id)?"active":""}" onclick="event.stopPropagation();toggleFav('${p.id}')" aria-label="Oblíbené"><i class="fa${favorites.has(p.id)?"s":"r"} fa-heart"></i></button>
         <div class="img-count"><i class="fas fa-camera"></i> ${p.imgs.length}</div>
-        <div class="viewers"><span class="vdot"></span>${viewerCounts[p.id]} prohlíží</div>
       </div>
       <div class="property-body">
-        <div class="property-type">${p.type} • ${p.tx}</div>
+        <div class="property-type">${p.type}${disp} • ${p.tx}</div>
         <div class="property-title">${p.title}</div>
         <div class="property-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${p.addr}</div>
         <div class="property-features">
           ${p.size?`<span class="property-feat"><i class="fas fa-ruler-combined"></i>${p.size} m²</span>`:""}
-          ${p.rooms?`<span class="property-feat"><i class="fas fa-door-open"></i>${p.rooms}</span>`:""}
+          ${p.rooms?`<span class="property-feat"><i class="fas fa-door-open"></i>${p.rooms} pok.</span>`:""}
           ${p.bath?`<span class="property-feat"><i class="fas fa-bath"></i>${p.bath}</span>`:""}
-          ${p.floor!==null?`<span class="property-feat"><i class="fas fa-building"></i>${p.floor}./${p.floors}. NP</span>`:""}
+          ${p.floor!==null&&p.floor!==undefined?`<span class="property-feat"><i class="fas fa-building"></i>${p.floor}.${p.floors?"/"+p.floors+".":""} NP</span>`:""}
+          ${p.energy?`<span class="property-feat"><i class="fas fa-leaf"></i>PENB ${p.energy}</span>`:""}
         </div>
         <div class="property-footer">
           <div><div class="property-price">${fmtPrice(p.price,p.tx)}</div>${p.size?`<span class="price-m2">${priceM2(p)}</span>`:""}</div>
           <button class="property-detail-btn">Detail</button>
         </div>
-        <div class="property-time">${timeAgo(p.added)}${p.source?` <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" class="source-link" onclick="event.stopPropagation()"><i class="fas fa-external-link-alt"></i> Sreality</a>`:""}</div>
+        <div class="property-time">${addedText}${p.source?` <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" class="source-link" onclick="event.stopPropagation()"><i class="fas ${sourceIcon}"></i> ${sourceName}</a>`:""}</div>
       </div>
-    </div>`).join("");
+    </div>`}).join("");
   document.getElementById("loadMoreWrap").style.display=displayCount>=filtered.length?"none":"block";
   // Lazy load images after render
   requestAnimationFrame(()=>lazyLoadImages());
@@ -954,12 +964,15 @@ function renderFavDrawer(){
 }
 
 // ===== MODAL =====
-let modalImg=0;let modalId=null;
+let modalImg=0;let modalId=null;let modalImgs=[];
 function openModal(id){
   const p=DB.find(x=>x.id===id);if(!p)return;
-  modalImg=0;modalId=id;chatContext.propertyId=id;
+  modalImg=0;modalId=id;modalImgs=[...p.imgs];chatContext.propertyId=id;
   if(!recentlyViewed.includes(id)){recentlyViewed.unshift(id);if(recentlyViewed.length>3)recentlyViewed.pop()}
-  viewerCounts[id]=Math.min(viewerCounts[id]+1,15);
+
+  const sourceName = p.source === "bezrealitky.cz" ? "Bezrealitky.cz" : "Sreality.cz";
+  const disp = p.disposition ? ` ${p.disposition}` : "";
+
   const m=document.getElementById("propertyModal");
   m.innerHTML=`<div class="modal-content">
     <div class="modal-gallery" id="mGallery" style="background-image:url('${p.imgs[0]}')" role="img" aria-label="${p.title}">
@@ -970,41 +983,168 @@ function openModal(id){
     </div>
     <div class="modal-body">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-        <div><div class="property-type" style="margin-bottom:6px">${p.type} • ${p.tx}</div>
+        <div><div class="property-type" style="margin-bottom:6px">${p.type}${disp} • ${p.tx}</div>
         <div class="modal-title">${p.title}</div>
         <div class="modal-location"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>${p.addr}</div></div>
-        <div style="text-align:right"><div class="modal-price">${fmtPrice(p.price,p.tx)}</div>${p.size?`<div class="modal-price m2">${priceM2(p)}</div>`:""}<div class="modal-id">ID: ${p.id}${p.source?` · <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" style="color:var(--primary);font-size:.7rem"><i class="fas fa-external-link-alt"></i> Zobrazit na Sreality.cz</a>`:""}</div></div>
+        <div style="text-align:right"><div class="modal-price">${fmtPrice(p.price,p.tx)}</div>${p.size?`<div class="modal-price m2">${priceM2(p)}</div>`:""}<div class="modal-id">ID: ${p.id} · <a href="${p.sourceUrl||'#'}" target="_blank" rel="noopener" style="color:var(--primary);font-size:.7rem"><i class="fas fa-external-link-alt"></i> ${sourceName}</a></div></div>
       </div>
-      <div class="modal-features">
-        ${p.size?`<div class="modal-feat"><i class="fas fa-ruler-combined"></i><div class="val">${p.size} m²</div><div class="lab">Plocha</div></div>`:""}
-        ${p.rooms?`<div class="modal-feat"><i class="fas fa-door-open"></i><div class="val">${p.rooms}</div><div class="lab">Pokojů</div></div>`:""}
-        ${p.bath?`<div class="modal-feat"><i class="fas fa-bath"></i><div class="val">${p.bath}</div><div class="lab">Koupelny</div></div>`:""}
-        ${p.energy?`<div class="modal-feat"><i class="fas fa-leaf"></i><div class="val">${p.energy}</div><div class="lab">Energie</div></div>`:""}
-        ${p.built?`<div class="modal-feat"><i class="fas fa-calendar"></i><div class="val">${p.built}</div><div class="lab">Stavba</div></div>`:""}
-        ${p.avail?`<div class="modal-feat"><i class="fas fa-key"></i><div class="val" style="font-size:.8rem">${p.avail}</div><div class="lab">Nastěhování</div></div>`:""}
-        ${p.floor!==null?`<div class="modal-feat"><i class="fas fa-building"></i><div class="val">${p.floor}/${p.floors}</div><div class="lab">Patro</div></div>`:""}
-        ${p.recon?`<div class="modal-feat"><i class="fas fa-tools"></i><div class="val">${p.recon}</div><div class="lab">Rekonstrukce</div></div>`:""}
+      <div class="modal-features" id="modalFeatures">
+        ${renderModalFeatures(p)}
       </div>
-      <div class="modal-desc"><h4>Popis</h4><p>${p.desc}</p></div>
-      <h4 style="margin-bottom:8px">Vybavení</h4>
-      <div class="modal-amenities">${p.amenities.map(a=>`<span class="amenity-tag">${a}</span>`).join("")}</div>
+      <div class="modal-desc" id="modalDesc">
+        <h4>Popis</h4>
+        ${p.desc ? `<p>${p.desc}</p>` : '<p style="color:var(--text-lighter);font-style:italic" id="descLoading"><i class="fas fa-spinner fa-spin"></i> Načítám podrobný popis...</p>'}
+      </div>
+      ${p.amenities && p.amenities.length ? `<h4 style="margin-bottom:8px">Vlastnosti a vybavení</h4>
+      <div class="modal-amenities" id="modalAmenities">${p.amenities.map(a=>`<span class="amenity-tag">${a}</span>`).join("")}</div>` : '<div id="modalAmenities"></div>'}
+      <div id="modalExtraInfo"></div>
       <div class="modal-actions">
         <button class="btn-ghost" onclick="shareProperty('${p.id}')"><i class="fas fa-share-alt"></i> Sdílet</button>
         <button class="btn-ghost" onclick="addToCompare('${p.id}')"><i class="fas fa-exchange-alt"></i> Porovnat</button>
         <button class="btn-ghost" onclick="toggleFav('${p.id}')"><i class="fa${favorites.has(p.id)?"s":"r"} fa-heart"></i> Oblíbené</button>
       </div>
-      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:18px;font-size:.8rem;color:var(--text-light);display:flex;align-items:center;gap:8px">
-        <span class="vdot" style="width:7px;height:7px;border-radius:50%;background:var(--success);animation:livePulse 2s infinite;flex-shrink:0"></span>
-        <span><strong>${viewerCounts[p.id]}</strong> lidí si právě prohlíží tuto nemovitost</span>
-      </div>
       <div class="modal-cta">
-        <button class="btn-primary" onclick="openChat();botMsg('Zajímáte se o <strong>${p.title}</strong> (${p.id}). Rád zodpovím jakékoliv dotazy! Co vás zajímá?',['Domluvit prohlídku','Okolí a vybavenost','Cena za m²','Chci kontakt na makléře'])"><i class="fas fa-robot"></i> Zeptat se AI</button>
+        <button class="btn-primary" onclick="openChat();botMsg('Zajímáte se o <strong>${escHtml(p.title)}</strong> (${p.id}). Rád zodpovím jakékoliv dotazy! Co vás zajímá?',['Domluvit prohlídku','Okolí a vybavenost','Cena za m²','Chci kontakt na makléře'])"><i class="fas fa-robot"></i> Zeptat se AI</button>
         <button class="btn-outline" onclick="closeModal();document.getElementById('contact').scrollIntoView({behavior:'smooth'})"><i class="fas fa-phone"></i> Kontaktovat</button>
       </div>
     </div></div>`;
   m.classList.add("active");document.body.style.overflow="hidden";
+
+  // Fetch full detail on-demand (enriches description, features, images)
+  if (!p._detailLoaded) fetchPropertyDetail(id);
 }
-function navImg(dir){const p=DB.find(x=>x.id===modalId);if(!p)return;modalImg=(modalImg+dir+p.imgs.length)%p.imgs.length;document.getElementById("mGallery").style.backgroundImage=`url('${p.imgs[modalImg]}')`;const c=document.getElementById("gCount");if(c)c.textContent=`${modalImg+1} / ${p.imgs.length}`}
+
+function escHtml(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+function renderModalFeatures(p) {
+  const feats = [];
+  if (p.size) feats.push(`<div class="modal-feat"><i class="fas fa-ruler-combined"></i><div class="val">${p.size} m²</div><div class="lab">Plocha</div></div>`);
+  if (p.rooms) feats.push(`<div class="modal-feat"><i class="fas fa-door-open"></i><div class="val">${p.rooms}</div><div class="lab">Pokojů</div></div>`);
+  if (p.bath) feats.push(`<div class="modal-feat"><i class="fas fa-bath"></i><div class="val">${p.bath}</div><div class="lab">Koupelny</div></div>`);
+  if (p.energy) feats.push(`<div class="modal-feat"><i class="fas fa-leaf"></i><div class="val">${p.energy}</div><div class="lab">PENB</div></div>`);
+  if (p.built) feats.push(`<div class="modal-feat"><i class="fas fa-calendar"></i><div class="val">${p.built}</div><div class="lab">Rok stavby</div></div>`);
+  if (p.recon) feats.push(`<div class="modal-feat"><i class="fas fa-tools"></i><div class="val">${p.recon}</div><div class="lab">Rekonstrukce</div></div>`);
+  if (p.floor !== null && p.floor !== undefined) feats.push(`<div class="modal-feat"><i class="fas fa-building"></i><div class="val">${p.floor}${p.floors?"/"+p.floors:""}</div><div class="lab">Patro</div></div>`);
+  if (p.avail) feats.push(`<div class="modal-feat"><i class="fas fa-key"></i><div class="val" style="font-size:.8rem">${p.avail}</div><div class="lab">Nastěhování</div></div>`);
+  if (p.material) feats.push(`<div class="modal-feat"><i class="fas fa-cubes"></i><div class="val" style="font-size:.75rem">${p.material}</div><div class="lab">Stavba</div></div>`);
+  if (p.ownership) feats.push(`<div class="modal-feat"><i class="fas fa-file-contract"></i><div class="val" style="font-size:.75rem">${p.ownership}</div><div class="lab">Vlastnictví</div></div>`);
+  if (p.condition) feats.push(`<div class="modal-feat"><i class="fas fa-check-circle"></i><div class="val" style="font-size:.75rem">${p.condition}</div><div class="lab">Stav</div></div>`);
+  if (p.furnished) feats.push(`<div class="modal-feat"><i class="fas fa-couch"></i><div class="val" style="font-size:.75rem">${p.furnished}</div><div class="lab">Vybavení</div></div>`);
+  return feats.join("");
+}
+
+// On-demand detail fetch — enriches the property with full data from the portal
+async function fetchPropertyDetail(id) {
+  try {
+    const resp = await fetch(`/api/properties?detail=${encodeURIComponent(id)}`, {signal: AbortSignal.timeout(10000)});
+    if (!resp.ok) return;
+    const detail = await resp.json();
+    if (detail.error) return;
+
+    const p = DB.find(x => x.id === id);
+    if (!p) return;
+
+    // Merge detail data into our DB record
+    if (detail.description && !p.desc) p.desc = detail.description;
+    if (detail.floor !== undefined && detail.floor !== null) p.floor = detail.floor;
+    if (detail.floors) p.floors = detail.floors;
+    if (detail.energy) p.energy = detail.energy;
+    if (detail.built) p.built = detail.built;
+    if (detail.recon) p.recon = detail.recon;
+    if (detail.material) p.material = detail.material;
+    if (detail.ownership) p.ownership = detail.ownership;
+    if (detail.condition) p.condition = detail.condition;
+    if (detail.furnished) p.furnished = detail.furnished;
+    if (detail.bathrooms) p.bath = detail.bathrooms;
+    if (detail.availableFrom) p.avail = detail.availableFrom;
+    if (detail.elevator !== undefined) p.elevator = detail.elevator;
+    if (detail.balcony !== undefined) p.balcony = detail.balcony;
+    if (detail.terrace !== undefined) p.terrace = detail.terrace;
+    if (detail.cellar !== undefined) p.cellar = detail.cellar;
+    if (detail.garage !== undefined) p.garage = detail.garage;
+    if (detail.heating) p.heating = detail.heating;
+    if (detail.usableArea && !p.size) p.size = detail.usableArea;
+    if (detail.floorArea && !p.size) p.size = detail.floorArea;
+    if (detail.totalArea && !p.size) p.size = detail.totalArea;
+    if (detail.roomsCount && !p.rooms) p.rooms = detail.roomsCount;
+    if (detail.lat && detail.lng) p.gps = { lat: detail.lat, lng: detail.lng };
+
+    // Update images if detail has more/better ones
+    if (detail.imgs && detail.imgs.length > p.imgs.length) {
+      p.imgs = detail.imgs;
+      modalImgs = [...p.imgs];
+      // Update gallery counter
+      const gc = document.getElementById("gCount");
+      if (gc) gc.textContent = `${modalImg+1} / ${modalImgs.length}`;
+    }
+
+    // Build amenities from detail flags
+    const extraAmenities = [];
+    if (p.elevator) extraAmenities.push("Výtah");
+    if (p.balcony) extraAmenities.push("Balkón");
+    if (p.terrace) extraAmenities.push("Terasa");
+    if (p.cellar) extraAmenities.push("Sklep");
+    if (p.garage) extraAmenities.push("Garáž");
+    if (p.parking) extraAmenities.push("Parkování");
+    if (p.garden) extraAmenities.push("Zahrada");
+    if (p.heating) extraAmenities.push(`Topení: ${p.heating}`);
+    // Merge without duplicates
+    const existingLower = new Set(p.amenities.map(a=>a.toLowerCase()));
+    for (const a of extraAmenities) {
+      if (!existingLower.has(a.toLowerCase())) { p.amenities.push(a); existingLower.add(a.toLowerCase()); }
+    }
+
+    p._detailLoaded = true;
+
+    // Update the modal if it's still showing this property
+    if (modalId === id) {
+      // Update description
+      const descEl = document.getElementById("modalDesc");
+      if (descEl && p.desc) {
+        descEl.innerHTML = `<h4>Popis</h4><p>${p.desc.replace(/\n/g,"<br>")}</p>`;
+      } else if (descEl && !p.desc) {
+        descEl.innerHTML = `<h4>Popis</h4><p style="color:var(--text-lighter)">${p.title}. ${p.addr}.</p>`;
+      }
+      // Update features
+      const featEl = document.getElementById("modalFeatures");
+      if (featEl) featEl.innerHTML = renderModalFeatures(p);
+      // Update amenities
+      const amenEl = document.getElementById("modalAmenities");
+      if (amenEl && p.amenities.length) {
+        amenEl.innerHTML = p.amenities.map(a=>`<span class="amenity-tag">${a}</span>`).join("");
+        // Ensure header exists
+        if (!amenEl.previousElementSibling || amenEl.previousElementSibling.tagName !== "H4") {
+          amenEl.insertAdjacentHTML("beforebegin", '<h4 style="margin-bottom:8px">Vlastnosti a vybavení</h4>');
+        }
+      }
+      // Show extra technical info
+      const extraEl = document.getElementById("modalExtraInfo");
+      if (extraEl) {
+        const techInfo = [];
+        if (detail.heating) techInfo.push(`<strong>Topení:</strong> ${detail.heating}`);
+        if (detail.electricity) techInfo.push(`<strong>Elektřina:</strong> ${detail.electricity}`);
+        if (detail.water) techInfo.push(`<strong>Voda:</strong> ${detail.water}`);
+        if (detail.gas) techInfo.push(`<strong>Plyn:</strong> ${detail.gas}`);
+        if (detail.sewage) techInfo.push(`<strong>Odpad:</strong> ${detail.sewage}`);
+        if (detail.telecom) techInfo.push(`<strong>Internet:</strong> ${detail.telecom}`);
+        if (detail.transport) techInfo.push(`<strong>Doprava:</strong> ${detail.transport}`);
+        if (techInfo.length) {
+          extraEl.innerHTML = `<h4 style="margin-bottom:8px;margin-top:14px">Technické údaje</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.82rem;color:var(--text-light);margin-bottom:18px;background:var(--bg);padding:14px;border-radius:var(--radius-sm)">${techInfo.map(t=>`<div>${t}</div>`).join("")}</div>`;
+        }
+      }
+    }
+  } catch(e) {
+    console.log("[BydlímTu] Detail fetch error:", e);
+    // Remove loading indicator
+    const loading = document.getElementById("descLoading");
+    if (loading) {
+      const p = DB.find(x => x.id === id);
+      loading.outerHTML = `<p style="color:var(--text-lighter)">${p ? p.title + ". " + p.addr + "." : "Popis není k dispozici."}</p>`;
+    }
+  }
+}
+function navImg(dir){if(!modalImgs.length)return;modalImg=(modalImg+dir+modalImgs.length)%modalImgs.length;document.getElementById("mGallery").style.backgroundImage=`url('${modalImgs[modalImg]}')`;const c=document.getElementById("gCount");if(c)c.textContent=`${modalImg+1} / ${modalImgs.length}`}
 function closeModal(){document.getElementById("propertyModal").classList.remove("active");document.body.style.overflow=""}
 function shareProperty(id){const p=DB.find(x=>x.id===id);if(!p)return;const url=location.href.split("?")[0]+"?p="+id;if(navigator.share)navigator.share({title:p.title,text:fmtPrice(p.price,p.tx),url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("Odkaz zkopírován do schránky")}}
 
@@ -1017,7 +1157,7 @@ function addToCompare(id){
 }
 function showComparison(){
   const ps=compareList.map(id=>DB.find(x=>x.id===id)).filter(Boolean);
-  const rows=[["Cena",p=>fmtPrice(p.price,p.tx)],["Plocha",p=>p.size?p.size+" m²":"—"],["Cena/m²",p=>priceM2(p)||"—"],["Pokoje",p=>p.rooms||"—"],["Koupelny",p=>p.bath||"—"],["Energie",p=>p.energy||"—"],["Stav",p=>p.recon?"Rekonstrukce "+p.recon:p.built?"Stavba "+p.built:"—"],["Dostupnost",p=>p.avail||"—"]];
+  const rows=[["Cena",p=>fmtPrice(p.price,p.tx)],["Plocha",p=>p.size?p.size+" m²":"—"],["Cena/m²",p=>priceM2(p)||"—"],["Dispozice",p=>p.disposition||"—"],["Pokoje",p=>p.rooms||"—"],["Koupelny",p=>p.bath||"—"],["Patro",p=>p.floor!==null&&p.floor!==undefined?`${p.floor}${p.floors?"/"+p.floors:""}`:"—"],["PENB",p=>p.energy||"—"],["Rok stavby",p=>p.built||"—"],["Rekonstrukce",p=>p.recon||"—"],["Vlastnictví",p=>p.ownership||"—"],["Stav",p=>p.condition||"—"],["Materiál",p=>p.material||"—"],["Dostupnost",p=>p.avail||"—"],["Zdroj",p=>p.source||"—"]];
   document.getElementById("comparisonContent").innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
       <h3 style="font-size:1.1rem;font-weight:600">Porovnání nemovitostí</h3>
@@ -1105,7 +1245,10 @@ function respond(input){
 
   // SHOW ALL
   if(L.match(/zobraz|všechny|celou|co.*máte|ukaz|nabíd/)){
-    return{html:`V nabídce máme <strong>${DB.length} nemovitostí</strong> — ${DB.filter(p=>p.type==="byt").length} bytů, ${DB.filter(p=>p.type==="dům").length} domů, ${DB.filter(p=>p.type==="komerční").length} komerčních a ${DB.filter(p=>p.type==="pozemek").length} pozemků.`,qr:["Byty","Domy","Komerční","Pozemky"]}
+    const srCount = DB.filter(p=>p.source==="sreality.cz").length;
+    const brCount = DB.filter(p=>p.source==="bezrealitky.cz").length;
+    const sourceInfo = brCount > 0 ? ` (Sreality: ${srCount}, Bezrealitky: ${brCount})` : "";
+    return{html:`V nabídce máme <strong>${DB.length} nemovitostí</strong>${sourceInfo} — ${DB.filter(p=>p.type==="byt").length} bytů, ${DB.filter(p=>p.type==="dům").length} domů, ${DB.filter(p=>p.type==="komerční").length} komerčních a ${DB.filter(p=>p.type==="pozemek").length} pozemků.`,qr:["Byty","Domy","Komerční","Pozemky","Jen Bezrealitky"]}
   }
 
   // CHEAPER / BIGGER (CONTEXT)
@@ -1174,8 +1317,8 @@ function respond(input){
   }
 
   // SPECIFIC PROPERTY
-  if(L.match(/(?:bt|sr)-\d+/i)){
-    const id=L.match(/(?:bt|sr)-\d+/i)[0].toUpperCase();const p=DB.find(x=>x.id===id);
+  if(L.match(/(?:bt|sr|br)-\d+/i)){
+    const id=L.match(/(?:bt|sr|br)-\d+/i)[0].toUpperCase();const p=DB.find(x=>x.id===id);
     if(p){chatContext.propertyId=id;return{html:`<strong>${p.title}</strong><br>${p.addr} • ${fmtPrice(p.price,p.tx)}<br><br>${p.desc.substring(0,180)}...`,qr:["Domluvit prohlídku","Cena za m²","Okolí","Kontakt"]}}
   }
 
