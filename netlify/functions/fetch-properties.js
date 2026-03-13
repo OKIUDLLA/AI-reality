@@ -139,6 +139,45 @@ async function fetchAllEstates() {
   });
 }
 
+// ===== SREALITY URL BUILDER =====
+// Correct format: /detail/prodej/byt/3+kk/locality-slug/hash_id
+const SUB_CB_MAP = {
+  // Byty (category_main_cb=1)
+  "1_2": "1+kk", "1_3": "1+1", "1_4": "2+kk", "1_5": "2+1",
+  "1_6": "3+kk", "1_7": "3+1", "1_8": "4+kk", "1_9": "4+1",
+  "1_10": "5+kk", "1_11": "5+1", "1_12": "6-a-vice", "1_16": "atypicky",
+  // Domy (category_main_cb=2)
+  "2_37": "rodinny", "2_39": "vila", "2_43": "chalupa", "2_33": "chata",
+  "2_35": "pamatka-jine", "2_40": "zemedelska-usedlost",
+  // Pozemky (category_main_cb=3)
+  "3_19": "bydleni", "3_18": "komercni", "3_20": "pole", "3_22": "les",
+  "3_21": "louka", "3_46": "zahrada", "3_48": "ostatni",
+  // Komercni (category_main_cb=4)
+  "4_23": "kancelare", "4_24": "sklady", "4_25": "vyrobni-prostory",
+  "4_26": "obchodni-prostory", "4_27": "ubytovani", "4_28": "restaurace",
+  "4_29": "zemedelsky", "4_31": "cinzovni-dum", "4_38": "virtualni-kancelar",
+};
+
+function buildSrealityUrl(estate, tx, catSlug, hid) {
+  const seo = estate.seo || {};
+  const mainCb = seo.category_main_cb || estate.category;
+  const subCb = seo.category_sub_cb;
+  const locality = seo.locality || "";
+
+  // Get sub-type slug
+  let subSlug = SUB_CB_MAP[`${mainCb}_${subCb}`] || "";
+  if (!subSlug) {
+    // Try to extract from name (e.g. "3+kk", "rodinny")
+    const name = estate.name || "";
+    const m = name.match(/(\d\+(?:kk|\d))/i);
+    if (m) subSlug = m[1].toLowerCase();
+    else subSlug = "ostatni";
+  }
+
+  const txSlug = tx === "pronájem" ? "pronajem" : "prodej";
+  return `https://www.sreality.cz/detail/${txSlug}/${catSlug}/${subSlug}/${locality}${hid}`;
+}
+
 // ===== TRANSFORM =====
 function toProperty(estate) {
   const hid = estate.hash_id;
@@ -147,11 +186,13 @@ function toProperty(estate) {
   const slug = CAT_SLUG[cat] || cat;
 
   const imgs = [];
-  // Use image_middle2 first (optimized thumbnail), then fall back to images array
-  const imgSources = (estate._links || {}).image_middle2 || (estate._links || {}).images || [];
-  for (const img of imgSources.slice(0, 5)) {
+  // Always use full images array (image_middle2 has only 1 thumbnail)
+  const imgSources = (estate._links || {}).images || [];
+  for (const img of imgSources.slice(0, 8)) {
     let href = img.href || "";
     if (href.startsWith("//")) href = "https:" + href;
+    // Upgrade resolution: 400x300 → 800x600 for better quality
+    href = href.replace(/fl=res,\d+,\d+,/, "fl=res,800,600,");
     // Route through our image proxy to avoid CDN hotlink blocking
     if (href && href.startsWith("http")) {
       imgs.push(`/api/img?url=${encodeURIComponent(href)}`);
@@ -206,7 +247,7 @@ function toProperty(estate) {
     recon: null,
     added: daysAgo,
     source: "sreality.cz",
-    sourceUrl: `https://www.sreality.cz/detail/${tx}/${slug}/${hid}`,
+    sourceUrl: buildSrealityUrl(estate, tx, slug, hid),
   };
 }
 
